@@ -92,3 +92,24 @@ async def update_book(
     await db.refresh(book)
 
     return book
+
+
+async def delete_book(db: AsyncSession, book_id: int) -> bool:
+    """
+    Delete a book by its ID.
+
+    Args:
+        db: Database session
+        book_id: ID of the book to delete
+
+    Returns:
+        True if book was deleted, False if not found
+    """
+    book = await get_book_by_id(db, book_id)
+    if book is None:
+        return False
+
+    await db.delete(book)
+    await db.commit()
+
+    return True

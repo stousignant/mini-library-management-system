@@ -142,3 +142,34 @@ async def test_update_book(client):
     assert data["isbn"] == update_payload["isbn"]
     assert data["status"] == "AVAILABLE"
     assert "created_at" in data
+
+
+@pytest.mark.asyncio
+async def test_delete_book(client):
+    """
+    Test deleting a book via DELETE /books/{id}.
+
+    Given: A book exists in the database
+    When: DELETE request is made to /books/{id}
+    Then: Book is deleted with status 204
+    And: Subsequent GET request returns 404
+    """
+    # Arrange - Create a book first
+    create_payload = {
+        "title": "Book to Delete",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+    }
+    create_response = await client.post("/books/", json=create_payload)
+    created_book = create_response.json()
+    book_id = created_book["id"]
+
+    # Act - Delete the book
+    response = await client.delete(f"/books/{book_id}")
+
+    # Assert
+    assert response.status_code == 204
+
+    # Verify book is deleted
+    get_response = await client.get(f"/books/{book_id}")
+    assert get_response.status_code == 404
