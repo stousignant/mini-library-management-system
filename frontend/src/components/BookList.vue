@@ -1,13 +1,53 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useBookStore } from '@/stores/bookStore'
 import BookCard from './BookCard.vue'
+import BookFormModal from './BookFormModal.vue'
+import type { Book } from '@/types/Book'
 
 const bookStore = useBookStore()
+const isModalOpen = ref(false)
+const bookToEdit = ref<Book | undefined>(undefined)
 
 onMounted(() => {
   bookStore.fetchBooks()
 })
+
+function openAddModal() {
+  bookToEdit.value = undefined
+  isModalOpen.value = true
+}
+
+function openEditModal(book: Book) {
+  bookToEdit.value = book
+  isModalOpen.value = true
+}
+
+function closeModal() {
+  isModalOpen.value = false
+  bookToEdit.value = undefined
+}
+
+async function handleSubmit(data: { title: string; author: string; isbn?: string }) {
+  try {
+    if (bookToEdit.value) {
+      await bookStore.updateBook(bookToEdit.value.id, data)
+    } else {
+      await bookStore.addBook(data)
+    }
+    closeModal()
+  } catch (_err) {
+    // Error already set in store
+  }
+}
+
+async function handleDelete(bookId: number) {
+  try {
+    await bookStore.deleteBook(bookId)
+  } catch (_err) {
+    // Error already set in store
+  }
+}
 </script>
 
 <template>
@@ -35,14 +75,21 @@ onMounted(() => {
     </div>
 
     <div v-else data-testid="book-list">
-      <div class="mb-6">
+      <div class="mb-6 flex gap-4">
         <input
           v-model="bookStore.searchQuery"
           type="text"
           placeholder="Search by title or author..."
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           data-testid="search-input"
         />
+        <button
+          @click="openAddModal"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
+          data-testid="add-book-btn"
+        >
+          Add Book
+        </button>
       </div>
 
       <div v-if="bookStore.filteredBooks.length === 0" class="text-center py-12 text-gray-500">
@@ -62,8 +109,17 @@ onMounted(() => {
           v-for="book in bookStore.filteredBooks"
           :key="book.id"
           :book="book"
+          @edit="openEditModal"
+          @delete="handleDelete"
         />
       </div>
     </div>
+
+    <BookFormModal
+      :is-open="isModalOpen"
+      :book-to-edit="bookToEdit"
+      @close="closeModal"
+      @submit="handleSubmit"
+    />
   </div>
 </template>

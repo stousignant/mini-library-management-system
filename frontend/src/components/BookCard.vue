@@ -3,8 +3,13 @@ import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import { useBookStore } from '@/stores/bookStore'
 
-defineProps<{
+const props = defineProps<{
   book: Book
+}>()
+
+const emit = defineEmits<{
+  edit: [book: Book]
+  delete: [bookId: number]
 }>()
 
 const bookStore = useBookStore()
@@ -23,6 +28,12 @@ const getButtonClass = (status: BookStatus) => {
 
 const getButtonLabel = (status: BookStatus) => {
   return status === BookStatus.Available ? 'Borrow' : 'Return'
+}
+
+function handleDelete() {
+  if (confirm(`Are you sure you want to delete "${props.book.title}"?`)) {
+    emit('delete', props.book.id)
+  }
 }
 </script>
 
@@ -67,7 +78,7 @@ const getButtonLabel = (status: BookStatus) => {
         </div>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-100">
+      <div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
         <button
           @click="bookStore.toggleStatus(book.id)"
           :class="getButtonClass(book.status)"
@@ -76,6 +87,23 @@ const getButtonLabel = (status: BookStatus) => {
         >
           {{ getButtonLabel(book.status) }}
         </button>
+
+        <div class="flex gap-2">
+          <button
+            @click="emit('edit', book)"
+            class="flex-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
+            data-testid="edit-btn"
+          >
+            Edit
+          </button>
+          <button
+            @click="handleDelete"
+            class="flex-1 px-3 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+            data-testid="delete-btn"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   </div>
