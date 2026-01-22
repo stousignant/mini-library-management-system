@@ -7,6 +7,7 @@ and other testing utilities.
 
 import pytest
 import pytest_asyncio
+import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -69,7 +70,7 @@ async def async_session(async_engine):
     Create a new database session for each test.
 
     Each test gets a fresh session that commits to the database.
-    Tables are cleaned up between tests by the engine fixture.
+    Tables are truncated after each test to ensure isolation.
     """
     async_session_maker = async_sessionmaker(
         async_engine,
@@ -79,6 +80,10 @@ async def async_session(async_engine):
 
     async with async_session_maker() as session:
         yield session
+
+    async with async_engine.begin() as conn:
+        await conn.execute(sa.text("TRUNCATE TABLE books RESTART IDENTITY CASCADE"))
+        await conn.commit()
 
 
 @pytest_asyncio.fixture(scope="function")
