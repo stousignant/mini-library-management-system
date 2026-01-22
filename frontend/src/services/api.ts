@@ -1,12 +1,25 @@
 import axios from 'axios'
-import { DEFAULT_API_PORT, DEFAULT_API_PROTOCOL, DEFAULT_API_URL, CONTENT_TYPE_JSON } from '@/constants/global'
+import { DEFAULT_API_URL, CONTENT_TYPE_JSON } from '@/constants/global'
 
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${DEFAULT_API_PROTOCOL}://${window.location.hostname}:${DEFAULT_API_PORT}`
+
+  if (envUrl) {
+    return envUrl
   }
-  return envUrl || DEFAULT_API_URL
+
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol.replace(':', '')
+    const hostname = window.location.hostname
+    const port = window.location.port
+
+    if (port) {
+      return `${protocol}://${hostname}:${port}`
+    }
+    return `${protocol}://${hostname}`
+  }
+
+  return DEFAULT_API_URL
 }
 
 const apiClient = axios.create({
