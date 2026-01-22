@@ -33,7 +33,7 @@ describe('BookList', () => {
     })
 
     it('fetches books on mount', () => {
-        const wrapper = mount(BookList, {
+        const _wrapper = mount(BookList, {
             global: {
                 plugins: [
                     createTestingPinia({
