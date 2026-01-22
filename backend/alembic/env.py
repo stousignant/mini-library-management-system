@@ -20,7 +20,7 @@ if os.getenv("DATABASE_URL"):
     from app.core.database import build_async_database_url
 
     database_url, connect_args = build_async_database_url(os.getenv("DATABASE_URL"))
-    config.set_main_option("sqlalchemy.url", database_url)
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
     if connect_args:
         config.attributes["connect_args"] = connect_args
 
