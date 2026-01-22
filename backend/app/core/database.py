@@ -38,7 +38,10 @@ def build_async_database_url(database_url: str) -> tuple[str, dict]:
 
     connect_args = {}
     if is_production_db:
-        connect_args["ssl"] = ssl.create_default_context()
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ssl_context
 
     return url.render_as_string(hide_password=False), connect_args
 
