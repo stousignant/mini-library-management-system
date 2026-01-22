@@ -1,17 +1,25 @@
 from fastapi import FastAPI
 
+from app.core.constants import (
+    APP_DESCRIPTION,
+    APP_TITLE,
+    APP_VERSION,
+    HEALTH_STATUS_HEALTHY,
+    ROOT_MESSAGE,
+)
+
 app = FastAPI(
-    title="Library Management System",
-    description="MVP API for managing books, users, and borrow logs",
-    version="0.1.0",
+    title=APP_TITLE,
+    description=APP_DESCRIPTION,
+    version=APP_VERSION,
 )
 
 
 @app.get("/")
 async def root():
-    return {"message": "Library Management System API"}
+    return {"message": ROOT_MESSAGE}
 
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    return {"status": HEALTH_STATUS_HEALTHY}

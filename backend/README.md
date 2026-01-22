@@ -25,6 +25,12 @@ FastAPI backend service for the Library Management System.
 # Install dependencies
 uv sync --all-extras
 
+# Copy environment variables (optional for local dev)
+cp .env.example .env
+
+# Set up pre-commit hooks (recommended)
+pre-commit install
+
 # Run tests
 uv run pytest -v
 
@@ -60,11 +66,15 @@ uv run pytest --cov=app tests/
 ```
 backend/
 ├── app/
+│   ├── core/
+│   │   ├── __init__.py
+│   │   └── constants.py  # Application-wide constants (zero magic numbers policy)
 │   ├── __init__.py
 │   └── main.py           # FastAPI application entry point
 ├── tests/
 │   ├── __init__.py
 │   └── test_health.py    # Health check tests
+├── .env.example          # Example environment variables
 ├── Dockerfile            # Multi-stage Docker build
 ├── pyproject.toml        # Project metadata and dependencies
 └── uv.lock              # Locked dependencies
@@ -77,4 +87,26 @@ backend/
 
 ## Environment Variables
 
+See `.env.example` for all available environment variables:
+
 - `DATABASE_URL` - PostgreSQL connection string (default: configured in docker-compose.yml)
+- `ENVIRONMENT` - Application environment (development/production)
+- `PYTHONUNBUFFERED` - Python output buffering (set to 1 for Docker)
+
+## Code Standards
+
+### Constants
+All magic numbers and strings must be defined in `app/core/constants.py`. This enforces:
+- Single source of truth for all static values
+- Easy configuration management
+- Prevention of hardcoded values throughout the codebase
+
+**Example:**
+```python
+# ❌ Bad - magic string
+return {"status": "healthy"}
+
+# ✅ Good - using constant
+from app.core.constants import HEALTH_STATUS_HEALTHY
+return {"status": HEALTH_STATUS_HEALTHY}
+```

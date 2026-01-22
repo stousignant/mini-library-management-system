@@ -34,6 +34,7 @@ This project is a strict MVP implementation focusing on core CRUD operations and
 - [uv](https://docs.astral.sh/uv/) - Python package manager
 - [Docker](https://www.docker.com/) & Docker Compose
 - [Node.js](https://nodejs.org/) 18+ (for frontend)
+- [pre-commit](https://pre-commit.com/) - Git hooks for code quality (optional but recommended)
 
 ### Local Development with Docker
 
@@ -52,6 +53,9 @@ cd backend
 
 # Install dependencies
 uv sync --all-extras
+
+# Set up pre-commit hooks (recommended)
+pre-commit install
 
 # Run tests
 uv run pytest -v
