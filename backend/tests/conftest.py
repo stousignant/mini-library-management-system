@@ -33,6 +33,7 @@ def setup_database(test_database_url):
 
     This fixture runs automatically at session start and ensures
     the test database has the proper schema via migrations.
+    Schema persists after tests; data is cleaned via table truncation.
     """
     alembic_cfg = Config("alembic.ini")
     alembic_cfg.set_main_option("sqlalchemy.url", test_database_url)
@@ -40,8 +41,6 @@ def setup_database(test_database_url):
     command.upgrade(alembic_cfg, "head")
 
     yield
-
-    command.downgrade(alembic_cfg, "base")
 
 
 @pytest_asyncio.fixture(scope="function")
