@@ -14,9 +14,10 @@ export const useBookStore = defineStore('book', () => {
     const query = searchQuery.value.toLowerCase().trim()
     if (!query) return books.value
 
-    return books.value.filter(book =>
-      book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+    return books.value.filter(
+      book =>
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query)
     )
   })
 
@@ -40,9 +41,10 @@ export const useBookStore = defineStore('book', () => {
     if (!book) return
 
     const originalStatus = book.status
-    const newStatus = originalStatus === BookStatus.Available
-      ? BookStatus.Borrowed
-      : BookStatus.Available
+    const newStatus =
+      originalStatus === BookStatus.Available
+        ? BookStatus.Borrowed
+        : BookStatus.Available
 
     book.status = newStatus
 
@@ -54,7 +56,11 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
-  async function addBook(bookData: { title: string; author: string; isbn?: string }) {
+  async function addBook(bookData: {
+    title: string
+    author: string
+    isbn?: string
+  }) {
     isLoading.value = true
     error.value = null
 
@@ -69,7 +75,10 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
-  async function updateBook(bookId: number, bookData: Partial<{ title: string; author: string; isbn: string }>) {
+  async function updateBook(
+    bookId: number,
+    bookData: Partial<{ title: string; author: string; isbn: string }>
+  ) {
     error.value = null
 
     try {
@@ -106,6 +115,6 @@ export const useBookStore = defineStore('book', () => {
     toggleStatus,
     addBook,
     updateBook,
-    deleteBook
+    deleteBook,
   }
 })

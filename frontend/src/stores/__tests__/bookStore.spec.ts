@@ -21,7 +21,7 @@ describe('bookStore', () => {
         author: 'F. Scott Fitzgerald',
         isbn: '9780743273565',
         status: BookStatus.Available,
-        created_at: '2024-01-01T00:00:00Z'
+        created_at: '2024-01-01T00:00:00Z',
       },
       {
         id: 2,
@@ -29,8 +29,8 @@ describe('bookStore', () => {
         author: 'George Orwell',
         isbn: '9780451524935',
         status: BookStatus.Borrowed,
-        created_at: '2024-01-02T00:00:00Z'
-      }
+        created_at: '2024-01-02T00:00:00Z',
+      },
     ]
 
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: mockBooks })
@@ -86,7 +86,7 @@ describe('bookStore', () => {
           author: 'Frank Herbert',
           isbn: '9780441172719',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
@@ -94,7 +94,7 @@ describe('bookStore', () => {
           author: 'J.K. Rowling',
           isbn: '9780439708180',
           status: BookStatus.Available,
-          created_at: '2024-01-02T00:00:00Z'
+          created_at: '2024-01-02T00:00:00Z',
         },
         {
           id: 3,
@@ -102,8 +102,8 @@ describe('bookStore', () => {
           author: 'Eric Evans',
           isbn: '9780321125217',
           status: BookStatus.Available,
-          created_at: '2024-01-03T00:00:00Z'
-        }
+          created_at: '2024-01-03T00:00:00Z',
+        },
       ]
 
       store.searchQuery = 'dune'
@@ -121,7 +121,7 @@ describe('bookStore', () => {
           author: 'Frank Herbert',
           isbn: '9780441172719',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
@@ -129,8 +129,8 @@ describe('bookStore', () => {
           author: 'J.K. Rowling',
           isbn: '9780439708180',
           status: BookStatus.Available,
-          created_at: '2024-01-02T00:00:00Z'
-        }
+          created_at: '2024-01-02T00:00:00Z',
+        },
       ]
 
       store.searchQuery = 'rowling'
@@ -148,7 +148,7 @@ describe('bookStore', () => {
           author: 'Eric Evans',
           isbn: '9780321125217',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
@@ -156,8 +156,8 @@ describe('bookStore', () => {
           author: 'F. Scott Fitzgerald',
           isbn: '9780743273565',
           status: BookStatus.Available,
-          created_at: '2024-01-02T00:00:00Z'
-        }
+          created_at: '2024-01-02T00:00:00Z',
+        },
       ]
 
       store.searchQuery = 'Design'
@@ -175,7 +175,7 @@ describe('bookStore', () => {
           author: 'Author 1',
           isbn: '1111111111',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
@@ -183,8 +183,8 @@ describe('bookStore', () => {
           author: 'Author 2',
           isbn: '2222222222',
           status: BookStatus.Available,
-          created_at: '2024-01-02T00:00:00Z'
-        }
+          created_at: '2024-01-02T00:00:00Z',
+        },
       ]
 
       store.searchQuery = ''
@@ -204,15 +204,17 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
 
       await store.toggleStatus(1)
 
-      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { status: BookStatus.Borrowed })
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', {
+        status: BookStatus.Borrowed,
+      })
       expect(store.books[0].status).toBe(BookStatus.Borrowed)
       expect(store.error).toBeNull()
     })
@@ -227,15 +229,17 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Borrowed,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
 
       await store.toggleStatus(1)
 
-      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { status: BookStatus.Available })
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', {
+        status: BookStatus.Available,
+      })
       expect(store.books[0].status).toBe(BookStatus.Available)
       expect(store.error).toBeNull()
     })
@@ -250,8 +254,8 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
       vi.mocked(apiClient.put).mockRejectedValueOnce(new Error('Network error'))
@@ -273,7 +277,7 @@ describe('bookStore', () => {
         author: 'New Author',
         isbn: '1234567890',
         status: BookStatus.Available,
-        created_at: '2024-01-01T00:00:00Z'
+        created_at: '2024-01-01T00:00:00Z',
       }
 
       vi.mocked(apiClient.post).mockResolvedValueOnce({ data: newBook })
@@ -281,13 +285,13 @@ describe('bookStore', () => {
       await store.addBook({
         title: 'New Book',
         author: 'New Author',
-        isbn: '1234567890'
+        isbn: '1234567890',
       })
 
       expect(apiClient.post).toHaveBeenCalledWith('/books/', {
         title: 'New Book',
         author: 'New Author',
-        isbn: '1234567890'
+        isbn: '1234567890',
       })
       expect(store.books).toHaveLength(1)
       expect(store.books[0]).toEqual(newBook)
@@ -297,12 +301,16 @@ describe('bookStore', () => {
     it('addBook handles API errors', async () => {
       const store = useBookStore()
 
-      vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('Network error'))
+      vi.mocked(apiClient.post).mockRejectedValueOnce(
+        new Error('Network error')
+      )
 
-      await expect(store.addBook({
-        title: 'New Book',
-        author: 'New Author'
-      })).rejects.toThrow()
+      await expect(
+        store.addBook({
+          title: 'New Book',
+          author: 'New Author',
+        })
+      ).rejects.toThrow()
 
       expect(store.error).toBe('Failed to create book')
       expect(store.books).toHaveLength(0)
@@ -318,8 +326,8 @@ describe('bookStore', () => {
           author: 'Old Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
       const updatedBook: Book = {
@@ -328,14 +336,16 @@ describe('bookStore', () => {
         author: 'Old Author',
         isbn: '1234567890',
         status: BookStatus.Available,
-        created_at: '2024-01-01T00:00:00Z'
+        created_at: '2024-01-01T00:00:00Z',
       }
 
       vi.mocked(apiClient.put).mockResolvedValueOnce({ data: updatedBook })
 
       await store.updateBook(1, { title: 'Updated Title' })
 
-      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { title: 'Updated Title' })
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', {
+        title: 'Updated Title',
+      })
       expect(store.books[0].title).toBe('Updated Title')
       expect(store.error).toBeNull()
     })
@@ -350,13 +360,15 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
       vi.mocked(apiClient.put).mockRejectedValueOnce(new Error('Network error'))
 
-      await expect(store.updateBook(1, { title: 'Updated Title' })).rejects.toThrow()
+      await expect(
+        store.updateBook(1, { title: 'Updated Title' })
+      ).rejects.toThrow()
 
       expect(store.error).toBe('Failed to update book')
     })
@@ -371,7 +383,7 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
+          created_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
@@ -379,8 +391,8 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '0987654321',
           status: BookStatus.Available,
-          created_at: '2024-01-02T00:00:00Z'
-        }
+          created_at: '2024-01-02T00:00:00Z',
+        },
       ]
 
       vi.mocked(apiClient.delete).mockResolvedValueOnce({ data: null })
@@ -403,11 +415,13 @@ describe('bookStore', () => {
           author: 'Test Author',
           isbn: '1234567890',
           status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z'
-        }
+          created_at: '2024-01-01T00:00:00Z',
+        },
       ]
 
-      vi.mocked(apiClient.delete).mockRejectedValueOnce(new Error('Network error'))
+      vi.mocked(apiClient.delete).mockRejectedValueOnce(
+        new Error('Network error')
+      )
 
       await expect(store.deleteBook(1)).rejects.toThrow()
 

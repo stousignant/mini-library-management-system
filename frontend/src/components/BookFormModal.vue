@@ -18,15 +18,19 @@ const isbn = ref('')
 
 const isEditMode = computed(() => !!props.bookToEdit)
 
-watch(() => props.bookToEdit, (book) => {
-  if (book) {
-    title.value = book.title
-    author.value = book.author
-    isbn.value = book.isbn || ''
-  } else {
-    resetForm()
-  }
-}, { immediate: true })
+watch(
+  () => props.bookToEdit,
+  book => {
+    if (book) {
+      title.value = book.title
+      author.value = book.author
+      isbn.value = book.isbn || ''
+    } else {
+      resetForm()
+    }
+  },
+  { immediate: true }
+)
 
 function resetForm() {
   title.value = ''
@@ -42,7 +46,7 @@ function handleSubmit() {
   emit('submit', {
     title: title.value.trim(),
     author: author.value.trim(),
-    isbn: isbn.value.trim() || undefined
+    isbn: isbn.value.trim() || undefined,
   })
 
   resetForm()

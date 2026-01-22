@@ -3,9 +3,12 @@ import typescript from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import vue from 'eslint-plugin-vue'
 import vueParser from 'vue-eslint-parser'
+import prettier from 'eslint-plugin-prettier'
+import prettierConfig from 'eslint-config-prettier'
 
 export default [
   js.configs.recommended,
+  prettierConfig,
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.vue'],
     languageOptions: {
@@ -25,6 +28,7 @@ export default [
     plugins: {
       '@typescript-eslint': typescript,
       vue,
+      prettier,
     },
     rules: {
       ...typescript.configs.recommended.rules,
@@ -38,6 +42,7 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      'prettier/prettier': 'error',
     },
   },
   {

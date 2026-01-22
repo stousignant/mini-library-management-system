@@ -25,8 +25,8 @@ const getApiUrl = () => {
 const apiClient = axios.create({
   baseURL: getApiUrl(),
   headers: {
-    'Content-Type': CONTENT_TYPE_JSON
-  }
+    'Content-Type': CONTENT_TYPE_JSON,
+  },
 })
 
 export default apiClient
