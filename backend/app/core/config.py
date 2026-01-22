@@ -85,3 +85,44 @@ def get_cors_origins() -> list[str]:
         if origins:
             return origins
     return DEFAULT_CORS_ORIGINS
+
+
+def get_cors_origin_regex() -> str | None:
+    """Get CORS origin regex pattern for wildcard domains.
+
+    Returns regex pattern if any origins contain wildcards (*), otherwise None.
+    When None is returned, use get_cors_origins() with allow_origins instead.
+
+    Converts patterns like https://*.vercel.app to regex patterns that match
+    all subdomains while escaping special characters properly.
+
+    Returns:
+        Regex pattern string if wildcards present, None if only exact origins
+    """
+    cors_env = os.getenv("CORS_ORIGINS")
+    if not cors_env:
+        return None
+
+    origins = [origin.strip() for origin in cors_env.split(",")]
+    origins = [origin for origin in origins if origin]
+
+    if not origins:
+        return None
+
+    has_wildcard = any("*" in origin for origin in origins)
+    if not has_wildcard:
+        return None
+
+    import re
+
+    patterns = []
+    for origin in origins:
+        if "*" in origin:
+            escaped = re.escape(origin)
+            pattern = escaped.replace(r"\*", r"[^/]+")
+            patterns.append(pattern)
+        else:
+            escaped = re.escape(origin)
+            patterns.append(escaped)
+
+    return "|".join(patterns)

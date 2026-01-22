@@ -5,79 +5,155 @@ Verifies that database URLs are properly configured with SSL
 for production environments like Supabase.
 """
 
+import ssl
+
 import pytest
 
-from app.core.config import Settings, get_cors_origins
+from app.core.config import Settings, get_cors_origin_regex, get_cors_origins
 from app.core.constants import DEFAULT_CORS_ORIGINS
-from app.core.database import build_database_url_with_ssl
+from app.core.database import build_async_database_url
 
 
-class TestDatabaseSSLConfiguration:
-    """Test SSL configuration for database connections."""
+class TestAsyncDatabaseURLConfiguration:
+    """Test async database URL configuration with driver and SSL handling."""
 
-    def test_supabase_url_gets_ssl_appended(self):
+    def test_postgresql_driver_converted_to_asyncpg(self):
         """
-        Test that Supabase URLs automatically get SSL parameter.
+        Test that postgresql:// URLs are converted to postgresql+asyncpg://.
 
-        Given: A Supabase database URL without SSL parameter
-        When: build_database_url_with_ssl is called
-        Then: SSL parameter is appended to the URL
+        Given: A standard PostgreSQL URL without async driver
+        When: build_async_database_url is called
+        Then: URL is converted to use asyncpg driver
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres"
-        result = build_database_url_with_ssl(supabase_url)
-        assert "ssl=require" in result
-        assert result == "postgresql+asyncpg://user:pass@db.supabase.co/postgres?ssl=require"
+        standard_url = "postgresql://user:pass@localhost:5432/mydb"
+        url, connect_args = build_async_database_url(standard_url)
+        assert url.startswith("postgresql+asyncpg://")
+        assert "user:pass@localhost:5432/mydb" in url
+        assert connect_args == {}
 
-    def test_supabase_url_with_existing_params_gets_ssl(self):
+    def test_asyncpg_driver_unchanged(self):
         """
-        Test SSL is added to Supabase URLs with existing query parameters.
+        Test that URLs already using asyncpg driver are unchanged.
 
-        Given: A Supabase URL with existing query parameters
-        When: build_database_url_with_ssl is called
-        Then: SSL parameter is added to existing parameters
+        Given: A URL already using postgresql+asyncpg://
+        When: build_async_database_url is called
+        Then: Driver specification remains unchanged
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres?connect_timeout=10"
-        result = build_database_url_with_ssl(supabase_url)
-        assert "ssl=require" in result
-        assert "connect_timeout=10" in result
+        async_url = "postgresql+asyncpg://user:pass@localhost:5432/mydb"
+        url, connect_args = build_async_database_url(async_url)
+        assert url == async_url
+        assert connect_args == {}
 
-    def test_supabase_url_with_ssl_already_present_unchanged(self):
+    def test_supabase_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that existing SSL parameters are not duplicated.
+        Test that Supabase URLs get both driver conversion and SSL context.
 
-        Given: A Supabase URL that already has ssl parameter
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        Given: A Supabase URL with standard postgresql:// driver
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL context is in connect_args
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres?ssl=require"
-        result = build_database_url_with_ssl(supabase_url)
-        assert result == supabase_url
+        supabase_url = "postgresql://user:pass@db.supabase.co/postgres"
+        url, connect_args = build_async_database_url(supabase_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
-    def test_non_supabase_url_unchanged(self):
+    def test_railway_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that non-Supabase URLs are not modified.
+        Test that Railway URLs get both driver conversion and SSL context.
 
-        Given: A localhost/non-Supabase database URL
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        Given: A Railway PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL context is in connect_args
         """
-        local_url = "postgresql+asyncpg://postgres:postgres@localhost:5432/library_dev"
-        result = build_database_url_with_ssl(local_url)
-        assert result == local_url
-        assert "ssl=" not in result
+        railway_url = "postgresql://user:pass@containers-us-west-123.railway.app:5432/railway"
+        url, connect_args = build_async_database_url(railway_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
-    def test_local_test_url_unchanged(self):
+    def test_render_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that local test URLs remain unchanged.
+        Test that Render URLs get both driver conversion and SSL context.
+
+        Given: A Render PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL context is in connect_args
+        """
+        render_url = "postgresql://user:pass@dpg-abc123.render.com:5432/mydb"
+        url, connect_args = build_async_database_url(render_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
+
+    def test_flyio_url_gets_ssl_and_driver_conversion(self):
+        """
+        Test that Fly.io URLs get both driver conversion and SSL context.
+
+        Given: A Fly.io PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL context is in connect_args
+        """
+        flyio_url = "postgresql://user:pass@top1.fly.io:5432/mydb"
+        url, connect_args = build_async_database_url(flyio_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
+
+    def test_production_url_with_existing_params_gets_ssl_context(self):
+        """
+        Test SSL context is provided for production URLs with existing query parameters.
+
+        Given: A production URL with existing query parameters
+        When: build_async_database_url is called
+        Then: SSL context is in connect_args, existing params preserved
+        """
+        railway_url = "postgresql://user:pass@db.railway.app/postgres?connect_timeout=10"
+        url, connect_args = build_async_database_url(railway_url)
+        assert "connect_timeout=10" in url
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
+
+    def test_production_url_with_ssl_query_param_gets_ssl_context(self):
+        """
+        Test that production URLs get SSL context regardless of query params.
+
+        Given: A production URL with ssl query parameter
+        When: build_async_database_url is called
+        Then: SSL context is provided via connect_args
+        """
+        railway_url = "postgresql://user:pass@db.railway.app/postgres?ssl=require"
+        url, connect_args = build_async_database_url(railway_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
+
+    def test_local_url_gets_driver_conversion_only(self):
+        """
+        Test that local URLs get driver conversion but not SSL context.
+
+        Given: A localhost database URL
+        When: build_async_database_url is called
+        Then: Driver is converted but connect_args is empty
+        """
+        local_url = "postgresql://postgres:postgres@localhost:5432/library_dev"
+        url, connect_args = build_async_database_url(local_url)
+        assert "postgresql+asyncpg://" in url
+        assert connect_args == {}
+
+    def test_local_test_url_gets_driver_conversion_only(self):
+        """
+        Test that local test URLs get driver conversion but not SSL context.
 
         Given: A local test database URL
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        When: build_async_database_url is called
+        Then: Driver is converted but connect_args is empty
         """
-        test_url = "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test"
-        result = build_database_url_with_ssl(test_url)
-        assert result == test_url
-        assert "ssl=" not in result
+        test_url = "postgresql://postgres:postgres@localhost:5433/library_test"
+        url, connect_args = build_async_database_url(test_url)
+        assert "postgresql+asyncpg://" in url
+        assert connect_args == {}
 
 
 class TestDatabaseCredentialSecurity:
@@ -224,3 +300,73 @@ class TestCORSOriginsConfiguration:
         monkeypatch.setenv("CORS_ORIGINS", "")
         result = get_cors_origins()
         assert result == DEFAULT_CORS_ORIGINS
+
+
+class TestCORSWildcardPatterns:
+    """Test CORS wildcard pattern support for dynamic domains."""
+
+    def test_single_wildcard_vercel_domain_returns_regex(self, monkeypatch):
+        """
+        Test wildcard Vercel domain is converted to regex pattern.
+
+        Given: CORS_ORIGINS with https://*.vercel.app
+        When: get_cors_origin_regex is called
+        Then: Returns regex pattern matching all Vercel subdomains
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://*.vercel.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "vercel\\.app" in result
+        assert r"https://[^/]+\.vercel\.app" in result
+
+    def test_mixed_exact_and_wildcard_origins_returns_regex(self, monkeypatch):
+        """
+        Test mixed exact and wildcard origins returns combined regex.
+
+        Given: CORS_ORIGINS with both exact and wildcard domains
+        When: get_cors_origin_regex is called
+        Then: Returns regex matching both exact and wildcard patterns
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://example.com,https://*.vercel.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "example\\.com" in result
+        assert "vercel\\.app" in result
+
+    def test_only_exact_origins_returns_none(self, monkeypatch):
+        """
+        Test exact origins without wildcards returns None.
+
+        Given: CORS_ORIGINS with only exact domains (no wildcards)
+        When: get_cors_origin_regex is called
+        Then: Returns None to use allow_origins instead
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://example.com,https://test.com")
+        result = get_cors_origin_regex()
+        assert result is None
+
+    def test_multiple_wildcard_domains_returns_combined_regex(self, monkeypatch):
+        """
+        Test multiple wildcard domains are combined in regex.
+
+        Given: CORS_ORIGINS with multiple wildcard patterns
+        When: get_cors_origin_regex is called
+        Then: Returns regex matching all patterns
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://*.vercel.app,https://*.netlify.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "vercel\\.app" in result
+        assert "netlify\\.app" in result
+
+    def test_no_cors_origins_env_returns_none(self, monkeypatch):
+        """
+        Test missing CORS_ORIGINS env returns None.
+
+        Given: No CORS_ORIGINS env var set
+        When: get_cors_origin_regex is called
+        Then: Returns None to fall back to defaults
+        """
+        monkeypatch.delenv("CORS_ORIGINS", raising=False)
+        result = get_cors_origin_regex()
+        assert result is None

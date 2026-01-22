@@ -92,6 +92,30 @@ See `.env.example` for all available environment variables:
 - `DATABASE_URL` - PostgreSQL connection string (default: configured in docker-compose.yml)
 - `ENVIRONMENT` - Application environment (development/production)
 - `PYTHONUNBUFFERED` - Python output buffering (set to 1 for Docker)
+- `CORS_ORIGINS` - Comma-separated list of allowed CORS origins (supports wildcards)
+
+### CORS Configuration
+
+The backend supports flexible CORS configuration with wildcard patterns:
+
+**Exact Origins (No Wildcards):**
+```bash
+CORS_ORIGINS=https://example.com,https://app.example.com
+```
+
+**Wildcard Patterns (For Dynamic Subdomains):**
+```bash
+# Allow all Vercel preview deployments
+CORS_ORIGINS=https://*.vercel.app
+
+# Mix exact and wildcard patterns
+CORS_ORIGINS=https://myapp.vercel.app,https://*.vercel.app,https://example.com
+```
+
+Wildcard patterns are converted to regex internally and automatically use FastAPI's `allow_origin_regex` parameter. This is particularly useful for:
+- Vercel preview deployments (different URL per deployment)
+- Netlify branch previews
+- Any platform that generates dynamic subdomains
 
 ## Code Standards
 

@@ -4,6 +4,7 @@ Database connection and session management.
 Provides async database engine and session factory for the application.
 """
 
+import ssl
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.engine import make_url
@@ -12,38 +13,48 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import get_settings
 
 
-def build_database_url_with_ssl(database_url: str) -> str:
+def build_async_database_url(database_url: str) -> tuple[str, dict]:
     """
-    Build database URL with SSL parameter for production databases.
+    Build async database URL with proper driver and SSL configuration.
 
-    Automatically appends ssl=require for Supabase URLs if not already present.
-    Local development and test URLs remain unchanged.
+    Converts postgresql:// to postgresql+asyncpg:// for async support.
+    Returns SSL context in connect_args for production databases (Supabase, Railway, etc).
+    Local development and test URLs remain unchanged (except for driver conversion).
 
     Args:
         database_url: The base database URL
 
     Returns:
-        Database URL with SSL parameter if needed
+        Tuple of (database_url, connect_args) where connect_args may contain SSL context
     """
     url = make_url(database_url)
 
-    if "supabase" not in str(url):
-        return database_url
+    if url.drivername == "postgresql":
+        url = url.set(drivername="postgresql+asyncpg")
 
-    query = dict(url.query)
-    if "ssl" not in query:
-        query["ssl"] = "require"
-        return url.set(query=query).render_as_string(hide_password=False)
+    is_production_db = "supabase" in str(url) or any(
+        host in str(url) for host in ["railway.app", "render.com", "fly.io"]
+    )
 
-    return database_url
+    connect_args = {}
+    if is_production_db:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ssl_context
+
+    return url.render_as_string(hide_password=False), connect_args
 
 
 settings = get_settings()
 
+database_url, connect_args = build_async_database_url(settings.database_url)
+
 async_engine = create_async_engine(
-    build_database_url_with_ssl(settings.database_url),
+    database_url,
     echo=False,
     future=True,
+    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(

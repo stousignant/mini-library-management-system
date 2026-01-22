@@ -17,7 +17,12 @@ if os.getenv("ENVIRONMENT") != "production":
 config = context.config
 
 if os.getenv("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+    from app.core.database import build_async_database_url
+
+    database_url, connect_args = build_async_database_url(os.getenv("DATABASE_URL"))
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+    if connect_args:
+        config.attributes["connect_args"] = connect_args
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -71,11 +76,14 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    configuration = config.get_section(config.config_ini_section, {})
+    connect_args = config.attributes.get("connect_args", {})
 
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:
