@@ -80,4 +80,4 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
         env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
+          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
