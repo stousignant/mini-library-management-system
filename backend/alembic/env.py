@@ -17,7 +17,10 @@ if os.getenv("ENVIRONMENT") != "production":
 config = context.config
 
 if os.getenv("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+    from app.core.database import build_async_database_url
+
+    database_url = build_async_database_url(os.getenv("DATABASE_URL"))
+    config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

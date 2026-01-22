@@ -12,36 +12,42 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import get_settings
 
 
-def build_database_url_with_ssl(database_url: str) -> str:
+def build_async_database_url(database_url: str) -> str:
     """
-    Build database URL with SSL parameter for production databases.
+    Build async database URL with proper driver and SSL configuration.
 
-    Automatically appends ssl=require for Supabase URLs if not already present.
-    Local development and test URLs remain unchanged.
+    Converts postgresql:// to postgresql+asyncpg:// for async support.
+    Automatically appends ssl=require for production databases (Supabase, Railway, etc).
+    Local development and test URLs remain unchanged (except for driver conversion).
 
     Args:
         database_url: The base database URL
 
     Returns:
-        Database URL with SSL parameter if needed
+        Database URL with async driver and SSL parameter if needed
     """
     url = make_url(database_url)
 
-    if "supabase" not in str(url):
-        return database_url
+    if url.drivername == "postgresql":
+        url = url.set(drivername="postgresql+asyncpg")
 
-    query = dict(url.query)
-    if "ssl" not in query:
-        query["ssl"] = "require"
-        return url.set(query=query).render_as_string(hide_password=False)
+    is_production_db = "supabase" in str(url) or any(
+        host in str(url) for host in ["railway.app", "render.com", "fly.io"]
+    )
 
-    return database_url
+    if is_production_db:
+        query = dict(url.query)
+        if "ssl" not in query:
+            query["ssl"] = "require"
+            return url.set(query=query).render_as_string(hide_password=False)
+
+    return url.render_as_string(hide_password=False)
 
 
 settings = get_settings()
 
 async_engine = create_async_engine(
-    build_database_url_with_ssl(settings.database_url),
+    build_async_database_url(settings.database_url),
     echo=False,
     future=True,
 )

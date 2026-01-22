@@ -9,74 +9,139 @@ import pytest
 
 from app.core.config import Settings, get_cors_origins
 from app.core.constants import DEFAULT_CORS_ORIGINS
-from app.core.database import build_database_url_with_ssl
+from app.core.database import build_async_database_url
 
 
-class TestDatabaseSSLConfiguration:
-    """Test SSL configuration for database connections."""
+class TestAsyncDatabaseURLConfiguration:
+    """Test async database URL configuration with driver and SSL handling."""
 
-    def test_supabase_url_gets_ssl_appended(self):
+    def test_postgresql_driver_converted_to_asyncpg(self):
         """
-        Test that Supabase URLs automatically get SSL parameter.
+        Test that postgresql:// URLs are converted to postgresql+asyncpg://.
 
-        Given: A Supabase database URL without SSL parameter
-        When: build_database_url_with_ssl is called
-        Then: SSL parameter is appended to the URL
+        Given: A standard PostgreSQL URL without async driver
+        When: build_async_database_url is called
+        Then: URL is converted to use asyncpg driver
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres"
-        result = build_database_url_with_ssl(supabase_url)
+        standard_url = "postgresql://user:pass@localhost:5432/mydb"
+        result = build_async_database_url(standard_url)
+        assert result.startswith("postgresql+asyncpg://")
+        assert "user:pass@localhost:5432/mydb" in result
+
+    def test_asyncpg_driver_unchanged(self):
+        """
+        Test that URLs already using asyncpg driver are unchanged.
+
+        Given: A URL already using postgresql+asyncpg://
+        When: build_async_database_url is called
+        Then: Driver specification remains unchanged
+        """
+        async_url = "postgresql+asyncpg://user:pass@localhost:5432/mydb"
+        result = build_async_database_url(async_url)
+        assert result == async_url
+
+    def test_supabase_url_gets_ssl_and_driver_conversion(self):
+        """
+        Test that Supabase URLs get both driver conversion and SSL.
+
+        Given: A Supabase URL with standard postgresql:// driver
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL parameter is appended
+        """
+        supabase_url = "postgresql://user:pass@db.supabase.co/postgres"
+        result = build_async_database_url(supabase_url)
+        assert "postgresql+asyncpg://" in result
         assert "ssl=require" in result
-        assert result == "postgresql+asyncpg://user:pass@db.supabase.co/postgres?ssl=require"
 
-    def test_supabase_url_with_existing_params_gets_ssl(self):
+    def test_railway_url_gets_ssl_and_driver_conversion(self):
         """
-        Test SSL is added to Supabase URLs with existing query parameters.
+        Test that Railway URLs get both driver conversion and SSL.
 
-        Given: A Supabase URL with existing query parameters
-        When: build_database_url_with_ssl is called
+        Given: A Railway PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL parameter is appended
+        """
+        railway_url = "postgresql://user:pass@containers-us-west-123.railway.app:5432/railway"
+        result = build_async_database_url(railway_url)
+        assert "postgresql+asyncpg://" in result
+        assert "ssl=require" in result
+
+    def test_render_url_gets_ssl_and_driver_conversion(self):
+        """
+        Test that Render URLs get both driver conversion and SSL.
+
+        Given: A Render PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL parameter is appended
+        """
+        render_url = "postgresql://user:pass@dpg-abc123.render.com:5432/mydb"
+        result = build_async_database_url(render_url)
+        assert "postgresql+asyncpg://" in result
+        assert "ssl=require" in result
+
+    def test_flyio_url_gets_ssl_and_driver_conversion(self):
+        """
+        Test that Fly.io URLs get both driver conversion and SSL.
+
+        Given: A Fly.io PostgreSQL URL
+        When: build_async_database_url is called
+        Then: Driver is converted and SSL parameter is appended
+        """
+        flyio_url = "postgresql://user:pass@top1.fly.io:5432/mydb"
+        result = build_async_database_url(flyio_url)
+        assert "postgresql+asyncpg://" in result
+        assert "ssl=require" in result
+
+    def test_production_url_with_existing_params_gets_ssl(self):
+        """
+        Test SSL is added to production URLs with existing query parameters.
+
+        Given: A production URL with existing query parameters
+        When: build_async_database_url is called
         Then: SSL parameter is added to existing parameters
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres?connect_timeout=10"
-        result = build_database_url_with_ssl(supabase_url)
+        railway_url = "postgresql://user:pass@db.railway.app/postgres?connect_timeout=10"
+        result = build_async_database_url(railway_url)
         assert "ssl=require" in result
         assert "connect_timeout=10" in result
+        assert "postgresql+asyncpg://" in result
 
-    def test_supabase_url_with_ssl_already_present_unchanged(self):
+    def test_production_url_with_ssl_already_present_unchanged(self):
         """
         Test that existing SSL parameters are not duplicated.
 
-        Given: A Supabase URL that already has ssl parameter
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        Given: A production URL that already has ssl parameter
+        When: build_async_database_url is called
+        Then: SSL is not duplicated, only driver is converted
         """
-        supabase_url = "postgresql+asyncpg://user:pass@db.supabase.co/postgres?ssl=require"
-        result = build_database_url_with_ssl(supabase_url)
-        assert result == supabase_url
+        railway_url = "postgresql://user:pass@db.railway.app/postgres?ssl=require"
+        result = build_async_database_url(railway_url)
+        assert result == "postgresql+asyncpg://user:pass@db.railway.app/postgres?ssl=require"
 
-    def test_non_supabase_url_unchanged(self):
+    def test_local_url_gets_driver_conversion_only(self):
         """
-        Test that non-Supabase URLs are not modified.
+        Test that local URLs get driver conversion but not SSL.
 
-        Given: A localhost/non-Supabase database URL
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        Given: A localhost database URL
+        When: build_async_database_url is called
+        Then: Driver is converted but SSL is not added
         """
-        local_url = "postgresql+asyncpg://postgres:postgres@localhost:5432/library_dev"
-        result = build_database_url_with_ssl(local_url)
-        assert result == local_url
+        local_url = "postgresql://postgres:postgres@localhost:5432/library_dev"
+        result = build_async_database_url(local_url)
+        assert "postgresql+asyncpg://" in result
         assert "ssl=" not in result
 
-    def test_local_test_url_unchanged(self):
+    def test_local_test_url_gets_driver_conversion_only(self):
         """
-        Test that local test URLs remain unchanged.
+        Test that local test URLs get driver conversion but not SSL.
 
         Given: A local test database URL
-        When: build_database_url_with_ssl is called
-        Then: URL is returned unchanged
+        When: build_async_database_url is called
+        Then: Driver is converted but SSL is not added
         """
-        test_url = "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test"
-        result = build_database_url_with_ssl(test_url)
-        assert result == test_url
+        test_url = "postgresql://postgres:postgres@localhost:5433/library_test"
+        result = build_async_database_url(test_url)
+        assert "postgresql+asyncpg://" in result
         assert "ssl=" not in result
 
 
