@@ -35,5 +35,22 @@ services:
       - ./backend/app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: library-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Frontend runs in browser, so API URL must use host-accessible address
+      # Use localhost:8000 (not 'backend:8000') since browser resolves URLs
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+    command: npm run dev -- --host 0.0.0.0
+
 volumes:
   postgres_data:
