@@ -31,7 +31,7 @@ const getButtonLabel = (status: BookStatus) => {
 }
 
 function handleDelete() {
-  if (confirm(`Are you sure you want to delete "${props.book.title}"?`)) {
+  if (window.confirm(`Are you sure you want to delete "${props.book.title}"?`)) {
     emit('delete', props.book.id)
   }
 }
@@ -80,26 +80,26 @@ function handleDelete() {
 
       <div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
         <button
-          @click="bookStore.toggleStatus(book.id)"
           :class="getButtonClass(book.status)"
           class="w-full text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
           data-testid="toggle-status-btn"
+          @click="bookStore.toggleStatus(book.id)"
         >
           {{ getButtonLabel(book.status) }}
         </button>
 
         <div class="flex gap-2">
           <button
-            @click="emit('edit', book)"
             class="flex-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
             data-testid="edit-btn"
+            @click="emit('edit', book)"
           >
             Edit
           </button>
           <button
-            @click="handleDelete"
             class="flex-1 px-3 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
             data-testid="delete-btn"
+            @click="handleDelete"
           >
             Delete
           </button>
