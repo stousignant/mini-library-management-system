@@ -7,20 +7,15 @@ Defines the database schema for books in the library system.
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, Enum, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.constants import (
     BOOK_AUTHOR_MAX_LENGTH,
     BOOK_ISBN_MAX_LENGTH,
     BOOK_TITLE_MAX_LENGTH,
 )
+from app.models import Base
 from app.models.enums import BookStatus
-
-
-class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
-
-    pass
 
 
 class Book(Base):

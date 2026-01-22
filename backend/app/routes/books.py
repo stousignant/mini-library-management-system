@@ -1,16 +1,17 @@
 """
 Book API routes.
 
-Handles CRUD operations for books in the library system.
+Handles HTTP endpoints for book CRUD operations.
+Delegates business logic to the service layer.
 """
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import DEFAULT_BOOK_STATUS
 from app.core.database import get_db
 from app.models.book import Book
 from app.schemas.book import BookCreate, BookResponse
+from app.services import book_service
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -30,15 +31,4 @@ async def create_book(
     Returns:
         Created book with id, status, and created_at
     """
-    book = Book(
-        title=book_data.title,
-        author=book_data.author,
-        isbn=book_data.isbn,
-        status=DEFAULT_BOOK_STATUS,
-    )
-
-    db.add(book)
-    await db.commit()
-    await db.refresh(book)
-
-    return book
+    return await book_service.create_book(db, book_data)

@@ -15,7 +15,7 @@ from app.core.config import get_test_database_url
 from app.core.constants import DB_TEST_CONNECT_ARGS
 from app.core.database import get_db
 from app.main import app
-from app.models.book import Base
+from app.models import Base
 
 
 @pytest.fixture(scope="session")
