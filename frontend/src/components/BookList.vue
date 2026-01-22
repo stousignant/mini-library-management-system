@@ -139,7 +139,10 @@ async function handleDelete(bookId: number) {
         </p>
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+      >
         <BookCard
           v-for="book in bookStore.filteredBooks"
           :key="book.id"
