@@ -13,7 +13,7 @@ export const useBookStore = defineStore('book', () => {
     error.value = null
 
     try {
-      const response = await apiClient.get<Book[]>('/books')
+      const response = await apiClient.get<Book[]>('/books/')
       books.value = response.data
     } catch (err) {
       error.value = 'Failed to fetch books'
