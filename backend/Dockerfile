@@ -10,13 +10,11 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 # 1. Install dependencies (Cached Layer)
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev
 
 # 2. Install Project (Code Layer)
 COPY . .
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # ------------------------------------------------------------------------------------
 # STAGE 2: Runtime
