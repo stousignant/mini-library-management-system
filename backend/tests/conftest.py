@@ -18,6 +18,7 @@ from app.core.config import get_test_database_url
 from app.core.constants import DB_TEST_CONNECT_ARGS
 from app.core.database import get_db
 from app.main import app
+from app.models import Base
 
 
 @pytest.fixture(scope="session")
@@ -81,7 +82,8 @@ async def async_session(async_engine):
         yield session
 
     async with async_engine.begin() as conn:
-        await conn.execute(sa.text("TRUNCATE TABLE books RESTART IDENTITY CASCADE"))
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(sa.text(f"TRUNCATE TABLE {table.name} RESTART IDENTITY CASCADE"))
         await conn.commit()
 
 
