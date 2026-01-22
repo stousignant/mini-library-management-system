@@ -43,6 +43,8 @@ services:
     ports:
       - "5173:5173"
     environment:
+      # Frontend runs in browser, so API URL must use host-accessible address
+      # Use localhost:8000 (not 'backend:8000') since browser resolves URLs
       VITE_API_URL: http://localhost:8000
     depends_on:
       - backend

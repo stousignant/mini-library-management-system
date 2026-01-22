@@ -41,12 +41,15 @@ This project is a strict MVP implementation focusing on core CRUD operations and
 ### Local Development with Docker
 
 ```bash
-# Start all services (backend + PostgreSQL)
+# Start all services (backend + frontend + PostgreSQL)
 docker-compose up --build
 
+# Frontend: http://localhost:5173
 # Backend API: http://localhost:8000
 # API Docs: http://localhost:8000/docs
 ```
+
+**Docker Networking Note:** The frontend runs in the browser (not in the container), so it connects to the backend via `localhost:8000` which is exposed through Docker port mapping. The internal Docker hostname `backend` is only used for container-to-container communication.
 
 ### Backend Development
 
@@ -68,6 +71,28 @@ uv run ruff check .
 # Start development server
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+### Frontend Development
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run tests
+npm run test
+
+# Start development server
+npm run dev
+
+# Frontend: http://localhost:5173
+```
+
+**Environment Configuration:**
+- `.env.development` - Used during `npm run dev` (points to `http://localhost:8000`)
+- `.env.test` - Used during testing (points to `http://localhost:8000`)
+- `.env.production` - Used during `npm run build` (default: `http://localhost:8000`, update for actual production domain)
 
 ## Project Structure
 
