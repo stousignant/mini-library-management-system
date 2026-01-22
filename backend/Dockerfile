@@ -23,6 +23,11 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
+# Install CA certificates for SSL connections
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # 1. Copy Virtual Environment
 COPY --from=builder /app/.venv /app/.venv
 
