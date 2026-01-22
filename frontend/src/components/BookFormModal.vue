@@ -9,12 +9,22 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  submit: [data: { title: string; author: string; isbn?: string }]
+  submit: [
+    data: {
+      title: string
+      author: string
+      isbn?: string
+      cover_image?: string
+      summary?: string
+    },
+  ]
 }>()
 
 const title = ref('')
 const author = ref('')
 const isbn = ref('')
+const coverImage = ref('')
+const summary = ref('')
 
 const isEditMode = computed(() => !!props.bookToEdit)
 
@@ -25,6 +35,8 @@ watch(
       title.value = book.title
       author.value = book.author
       isbn.value = book.isbn || ''
+      coverImage.value = book.cover_image || ''
+      summary.value = book.summary || ''
     } else {
       resetForm()
     }
@@ -36,6 +48,8 @@ function resetForm() {
   title.value = ''
   author.value = ''
   isbn.value = ''
+  coverImage.value = ''
+  summary.value = ''
 }
 
 function handleSubmit() {
@@ -47,6 +61,8 @@ function handleSubmit() {
     title: title.value.trim(),
     author: author.value.trim(),
     isbn: isbn.value.trim() || undefined,
+    cover_image: coverImage.value.trim() || undefined,
+    summary: summary.value.trim() || undefined,
   })
 
   resetForm()
@@ -96,7 +112,7 @@ function handleClose() {
           />
         </div>
 
-        <div class="mb-6">
+        <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             ISBN
           </label>
@@ -110,6 +126,32 @@ function handleClose() {
           <p v-if="isEditMode" class="text-xs text-gray-500 mt-1">
             ISBN cannot be changed after creation
           </p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Cover Image URL
+          </label>
+          <input
+            v-model="coverImage"
+            type="url"
+            placeholder="https://example.com/cover.jpg"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            data-testid="cover-image-input"
+          />
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Summary
+          </label>
+          <textarea
+            v-model="summary"
+            rows="3"
+            placeholder="Brief description or publisher information"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            data-testid="summary-input"
+          />
         </div>
 
         <div class="flex gap-3">

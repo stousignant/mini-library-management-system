@@ -117,6 +117,129 @@ Wildcard patterns are converted to regex internally and automatically use FastAP
 - Netlify branch previews
 - Any platform that generates dynamic subdomains
 
+## Database Seeding
+
+The application includes professional database seeding capabilities to populate the database with 100 curated books from the Open Library API.
+
+### Quick Start
+
+**Development Seeding (8 books):**
+```bash
+cd backend
+uv run python -m scripts.seed_books
+```
+
+**Production Seeding (100 books):**
+```bash
+cd backend
+uv run python -m scripts.seed_production
+```
+
+### Features
+
+- **Automated Seeding:** Production deployments automatically seed an empty database
+- **100 Curated Books:** Organized across 5 genres (Programming, Classics, Sci-Fi, Fantasy, Business)
+- **Live API Integration:** Fetches real book data from Open Library API (no auth required)
+- **Rich Metadata:** Includes titles, authors, cover images, and publisher information
+- **Idempotent:** Safe to run multiple times (skips duplicates by ISBN)
+- **Progress Tracking:** Real-time progress indicators and detailed statistics
+
+### Book Collection
+
+The seed data includes 100 carefully selected books across genres:
+- **Programming & Tech (20):** Clean Code, Design Patterns, Pragmatic Programmer, etc.
+- **Classic Literature (25):** 1984, Great Gatsby, Pride & Prejudice, To Kill a Mockingbird, etc.
+- **Science Fiction (20):** Dune, Foundation, Ender's Game, Neuromancer, etc.
+- **Fantasy (10):** Lord of the Rings, Harry Potter, Name of the Wind, etc.
+- **Business & Non-Fiction (25):** Atomic Habits, Sapiens, Zero to One, etc.
+
+All ISBNs are defined in `app/core/constants.py` → `SEED_BOOK_ISBNS`
+
+### Production Deployment
+
+Production deployments automatically handle seeding via `start.sh`:
+
+1. **Runs migrations** (with retry logic)
+2. **Checks if database is empty**
+3. **Seeds 100 books if empty** (only on first deployment)
+4. **Starts the application**
+
+**Control via Environment Variable:**
+```bash
+# Enable/disable automatic seeding (default: true)
+ENABLE_AUTO_SEED=true
+```
+
+**Manual Seeding in Production:**
+```bash
+# Railway
+railway run python -m scripts.seed_production
+
+# Render
+# Use web dashboard: Shell → python -m scripts.seed_production
+
+# Fly.io
+fly ssh console -C "python -m scripts.seed_production"
+```
+
+### Seeding Scripts
+
+**`scripts/seed_books.py`** - Development seeding (8 books)
+- Fast seeding for local development
+- Uses first 8 books from SEED_BOOK_ISBNS
+- Good for quick testing
+
+**`scripts/seed_production.py`** - Production seeding (100 books)
+- Full collection with progress tracking
+- Safety prompts if database has existing books
+- Detailed statistics and error reporting
+- Commits every 10 books for reliability
+
+### Example Output
+
+```
+============================================================
+🌱 PRODUCTION DATABASE SEEDING
+============================================================
+
+📊 Current books in database: 0
+
+🔍 Fetching metadata for 100 books from Open Library API...
+------------------------------------------------------------
+[1/100] ✅ Added: Clean Code by Robert C. Martin
+[2/100] ✅ Added: The Pragmatic Programmer by Andy Hunt
+...
+[10/100] ✅ Added: Learning Python by Mark Lutz
+
+💾 Progress saved (committed 10 books)
+...
+
+============================================================
+✨ SEEDING COMPLETE!
+============================================================
+📚 Created:  95 book(s)
+⏭️  Skipped:  3 book(s)
+⚠️  Failed:   2 book(s)
+📊 Total:    95 book(s) now in database
+============================================================
+```
+
+### Troubleshooting
+
+**Seeding fails with "No module named scripts":**
+- Ensure you're running from the `backend/` directory
+- Use `python -m scripts.seed_production` (not `python scripts/seed_production.py`)
+
+**Books missing cover images:**
+- Some books may not have covers in Open Library
+- The script continues and adds books without covers
+- Frontend displays a placeholder for missing covers
+
+**API timeout errors:**
+- Open Library API is occasionally slow
+- Script has 10-second timeout per book
+- Failed books are logged and skipped
+
 ## Code Standards
 
 ### Constants

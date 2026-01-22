@@ -37,25 +37,61 @@ function handleDelete() {
     emit('delete', props.book.id)
   }
 }
+
+function handleImageError(event: globalThis.Event) {
+  const target = event.target as globalThis.HTMLImageElement
+  target.style.display = 'none'
+}
 </script>
 
 <template>
   <div
     :data-testid="`book-item-${book.id}`"
-    class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200"
+    class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200 flex flex-col h-full"
   >
-    <div class="p-6">
-      <div class="flex items-start justify-between mb-4">
-        <h3 class="text-xl font-bold text-gray-900 flex-1 pr-2">
-          {{ book.title }}
-        </h3>
-        <span
-          :class="getStatusColor(book.status)"
-          class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-        >
-          {{ book.status }}
-        </span>
+    <div class="relative w-full h-64 bg-gray-100">
+      <div
+        v-if="book.cover_image"
+        class="w-full h-full flex items-center justify-center overflow-hidden"
+      >
+        <img
+          :src="book.cover_image"
+          :alt="`Cover of ${book.title}`"
+          class="h-full w-full object-contain"
+          @error="handleImageError"
+        />
       </div>
+      <div
+        v-else
+        class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"
+      >
+        <svg
+          class="w-16 h-16 text-gray-400"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <span
+        :class="getStatusColor(book.status)"
+        class="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-semibold shadow-md"
+      >
+        {{ book.status }}
+      </span>
+    </div>
+
+    <div class="p-4 flex flex-col flex-1">
+      <h3
+        class="text-lg font-bold text-gray-900 mb-3 line-clamp-2"
+        :title="book.title"
+      >
+        {{ book.title }}
+      </h3>
 
       <div class="space-y-2 text-sm text-gray-600">
         <div class="flex items-center">
@@ -89,6 +125,13 @@ function handleDelete() {
         </div>
 
         <div
+          v-if="book.summary"
+          class="pt-2 text-gray-700 text-sm italic border-t border-gray-100"
+        >
+          {{ book.summary }}
+        </div>
+
+        <div
           class="flex items-center text-xs text-gray-400 pt-2 border-t border-gray-100"
         >
           <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -102,7 +145,7 @@ function handleDelete() {
         </div>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
+      <div class="mt-auto pt-3 border-t border-gray-100 space-y-2">
         <button
           :class="getButtonClass(book.status)"
           class="w-full text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"

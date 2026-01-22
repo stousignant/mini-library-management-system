@@ -11,7 +11,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.constants import (
     BOOK_AUTHOR_MAX_LENGTH,
+    BOOK_COVER_IMAGE_MAX_LENGTH,
     BOOK_ISBN_MAX_LENGTH,
+    BOOK_SUMMARY_MAX_LENGTH,
     BOOK_TITLE_MAX_LENGTH,
 )
 from app.models import Base
@@ -27,6 +29,8 @@ class Book(Base):
     title: Mapped[str] = mapped_column(String(BOOK_TITLE_MAX_LENGTH), nullable=False)
     author: Mapped[str] = mapped_column(String(BOOK_AUTHOR_MAX_LENGTH), nullable=False)
     isbn: Mapped[str | None] = mapped_column(String(BOOK_ISBN_MAX_LENGTH), nullable=True)
+    cover_image: Mapped[str | None] = mapped_column(String(BOOK_COVER_IMAGE_MAX_LENGTH), nullable=True)
+    summary: Mapped[str | None] = mapped_column(String(BOOK_SUMMARY_MAX_LENGTH), nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         Enum(BookStatus, native_enum=False),
         nullable=False,
