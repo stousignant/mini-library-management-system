@@ -9,7 +9,7 @@ import os
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.constants import DEFAULT_DEV_DB_URL, DEFAULT_TEST_DB_URL
+from app.core.constants import DEFAULT_TEST_DB_URL
 
 
 class Settings(BaseSettings):
@@ -32,28 +32,23 @@ class Settings(BaseSettings):
         if self.database_url is not None:
             return self
 
-        local_db_url = os.getenv(
-            "LOCAL_DATABASE_URL",
-            DEFAULT_TEST_DB_URL,
-        )
-        dev_db_url = os.getenv(
-            "DEV_DATABASE_URL",
-            DEFAULT_DEV_DB_URL,
-        )
-
-        environment_database_map = {
-            "local": local_db_url,
-            "development": dev_db_url,
-            "production": os.getenv("DATABASE_URL", ""),
-        }
-
-        self.database_url = environment_database_map.get(
-            self.environment,
-            dev_db_url,
-        )
-
-        if self.environment == "production" and not self.database_url:
-            raise ValueError("DATABASE_URL environment variable must be set for production environment")
+        if self.environment == "local":
+            self.database_url = os.getenv("LOCAL_DATABASE_URL", DEFAULT_TEST_DB_URL)
+        elif self.environment == "development":
+            self.database_url = os.getenv("DEV_DATABASE_URL", "")
+            if not self.database_url:
+                raise ValueError(
+                    "DEV_DATABASE_URL environment variable must be set for development environment. "
+                    "Refusing to use default credentials for security reasons."
+                )
+        elif self.environment == "production":
+            self.database_url = os.getenv("DATABASE_URL", "")
+            if not self.database_url:
+                raise ValueError("DATABASE_URL environment variable must be set for production environment")
+        else:
+            self.database_url = os.getenv("DEV_DATABASE_URL", "")
+            if not self.database_url:
+                raise ValueError(f"Database URL must be set for environment: {self.environment}")
 
         return self
 

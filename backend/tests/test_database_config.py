@@ -5,6 +5,9 @@ Verifies that database URLs are properly configured with SSL
 for production environments like Supabase.
 """
 
+import pytest
+
+from app.core.config import Settings
 from app.core.database import build_database_url_with_ssl
 
 
@@ -74,3 +77,73 @@ class TestDatabaseSSLConfiguration:
         result = build_database_url_with_ssl(test_url)
         assert result == test_url
         assert "ssl=" not in result
+
+
+class TestDatabaseCredentialSecurity:
+    """Test that database credentials are properly secured."""
+
+    def test_development_environment_requires_explicit_database_url(self, monkeypatch):
+        """
+        Test development environment fails without DEV_DATABASE_URL.
+
+        Given: ENVIRONMENT=development and no DEV_DATABASE_URL
+        When: Settings is instantiated
+        Then: ValueError is raised with security message
+        """
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("DEV_DATABASE_URL", raising=False)
+        monkeypatch.delenv("LOCAL_DATABASE_URL", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "development")
+
+        with pytest.raises(ValueError, match="DEV_DATABASE_URL environment variable must be set"):
+            Settings(_env_file=None)
+
+    def test_production_environment_requires_explicit_database_url(self, monkeypatch):
+        """
+        Test production environment fails without DATABASE_URL.
+
+        Given: ENVIRONMENT=production and no DATABASE_URL
+        When: Settings is instantiated
+        Then: ValueError is raised
+        """
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("DEV_DATABASE_URL", raising=False)
+        monkeypatch.delenv("LOCAL_DATABASE_URL", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "production")
+
+        with pytest.raises(ValueError, match="DATABASE_URL environment variable must be set"):
+            Settings(_env_file=None)
+
+    def test_local_environment_uses_default_safely(self, monkeypatch):
+        """
+        Test local environment can use default credentials safely.
+
+        Given: ENVIRONMENT=local and no explicit database URL
+        When: Settings is instantiated
+        Then: Default test database URL is used
+        """
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("DEV_DATABASE_URL", raising=False)
+        monkeypatch.delenv("LOCAL_DATABASE_URL", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "local")
+
+        settings = Settings(_env_file=None)
+        assert "localhost:5433" in settings.database_url
+        assert "library_test" in settings.database_url
+
+    def test_development_environment_works_with_explicit_url(self, monkeypatch):
+        """
+        Test development environment works when URL is provided.
+
+        Given: ENVIRONMENT=development with DEV_DATABASE_URL set
+        When: Settings is instantiated
+        Then: Settings uses the provided URL
+        """
+        dev_url = "postgresql+asyncpg://user:pass@dev.example.com/mydb"
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("LOCAL_DATABASE_URL", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "development")
+        monkeypatch.setenv("DEV_DATABASE_URL", dev_url)
+
+        settings = Settings(_env_file=None)
+        assert settings.database_url == dev_url
