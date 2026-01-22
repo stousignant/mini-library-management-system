@@ -30,3 +30,4 @@ BOOK_FIELD_MIN_LENGTH = 1
 
 # Database Configuration
 DB_TEST_CONNECT_ARGS = {"server_settings": {"jit": "off"}, "ssl": "disable"}
+DEFAULT_TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test"
