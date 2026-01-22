@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import make_url
 
-from app.core.config import get_cors_origins, get_settings
+from app.core.config import get_cors_origin_regex, get_cors_origins, get_settings
 from app.core.constants import (
     APP_DESCRIPTION,
     APP_TITLE,
@@ -32,13 +32,23 @@ app = FastAPI(
     version=APP_VERSION,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=get_cors_origins(),
-    allow_credentials=CORS_ALLOW_CREDENTIALS,
-    allow_methods=CORS_ALLOW_ALL_METHODS,
-    allow_headers=CORS_ALLOW_ALL_HEADERS,
-)
+cors_regex = get_cors_origin_regex()
+if cors_regex:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=cors_regex,
+        allow_credentials=CORS_ALLOW_CREDENTIALS,
+        allow_methods=CORS_ALLOW_ALL_METHODS,
+        allow_headers=CORS_ALLOW_ALL_HEADERS,
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_cors_origins(),
+        allow_credentials=CORS_ALLOW_CREDENTIALS,
+        allow_methods=CORS_ALLOW_ALL_METHODS,
+        allow_headers=CORS_ALLOW_ALL_HEADERS,
+    )
 
 app.include_router(books.router)
 

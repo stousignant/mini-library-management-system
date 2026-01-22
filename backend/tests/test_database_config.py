@@ -9,7 +9,7 @@ import ssl
 
 import pytest
 
-from app.core.config import Settings, get_cors_origins
+from app.core.config import Settings, get_cors_origin_regex, get_cors_origins
 from app.core.constants import DEFAULT_CORS_ORIGINS
 from app.core.database import build_async_database_url
 
@@ -300,3 +300,73 @@ class TestCORSOriginsConfiguration:
         monkeypatch.setenv("CORS_ORIGINS", "")
         result = get_cors_origins()
         assert result == DEFAULT_CORS_ORIGINS
+
+
+class TestCORSWildcardPatterns:
+    """Test CORS wildcard pattern support for dynamic domains."""
+
+    def test_single_wildcard_vercel_domain_returns_regex(self, monkeypatch):
+        """
+        Test wildcard Vercel domain is converted to regex pattern.
+
+        Given: CORS_ORIGINS with https://*.vercel.app
+        When: get_cors_origin_regex is called
+        Then: Returns regex pattern matching all Vercel subdomains
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://*.vercel.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "vercel\\.app" in result
+        assert r"https://[^/]+\.vercel\.app" in result
+
+    def test_mixed_exact_and_wildcard_origins_returns_regex(self, monkeypatch):
+        """
+        Test mixed exact and wildcard origins returns combined regex.
+
+        Given: CORS_ORIGINS with both exact and wildcard domains
+        When: get_cors_origin_regex is called
+        Then: Returns regex matching both exact and wildcard patterns
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://example.com,https://*.vercel.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "example\\.com" in result
+        assert "vercel\\.app" in result
+
+    def test_only_exact_origins_returns_none(self, monkeypatch):
+        """
+        Test exact origins without wildcards returns None.
+
+        Given: CORS_ORIGINS with only exact domains (no wildcards)
+        When: get_cors_origin_regex is called
+        Then: Returns None to use allow_origins instead
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://example.com,https://test.com")
+        result = get_cors_origin_regex()
+        assert result is None
+
+    def test_multiple_wildcard_domains_returns_combined_regex(self, monkeypatch):
+        """
+        Test multiple wildcard domains are combined in regex.
+
+        Given: CORS_ORIGINS with multiple wildcard patterns
+        When: get_cors_origin_regex is called
+        Then: Returns regex matching all patterns
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "https://*.vercel.app,https://*.netlify.app")
+        result = get_cors_origin_regex()
+        assert result is not None
+        assert "vercel\\.app" in result
+        assert "netlify\\.app" in result
+
+    def test_no_cors_origins_env_returns_none(self, monkeypatch):
+        """
+        Test missing CORS_ORIGINS env returns None.
+
+        Given: No CORS_ORIGINS env var set
+        When: get_cors_origin_regex is called
+        Then: Returns None to fall back to defaults
+        """
+        monkeypatch.delenv("CORS_ORIGINS", raising=False)
+        result = get_cors_origin_regex()
+        assert result is None
