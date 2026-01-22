@@ -34,6 +34,8 @@ async def test_create_book(client):
     assert data["title"] == payload["title"]
     assert data["author"] == payload["author"]
     assert data["isbn"] == payload["isbn"]
+    assert data["cover_image"] is None
+    assert data["summary"] is None
     assert data["status"] == "AVAILABLE"
     assert "created_at" in data
 
@@ -185,6 +187,80 @@ async def test_update_book_status(client):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "AVAILABLE"
+
+
+@pytest.mark.asyncio
+async def test_create_book_with_cover_and_summary(client):
+    """
+    Test creating a book with cover_image and summary fields.
+
+    Given: Valid book data including cover_image and summary
+    When: POST request is made to /books/
+    Then: Book is created with status 201
+    And: Response contains cover_image and summary fields
+    """
+    # Arrange
+    payload = {
+        "title": "Domain-Driven Design",
+        "author": "Eric Evans",
+        "isbn": "978-0321125217",
+        "cover_image": "https://covers.openlibrary.org/b/id/12345-L.jpg",
+        "summary": "Published by Addison-Wesley",
+    }
+
+    # Act
+    response = await client.post("/books/", json=payload)
+
+    # Assert
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data["title"] == payload["title"]
+    assert data["author"] == payload["author"]
+    assert data["isbn"] == payload["isbn"]
+    assert data["cover_image"] == payload["cover_image"]
+    assert data["summary"] == payload["summary"]
+    assert data["status"] == "AVAILABLE"
+    assert "created_at" in data
+
+
+@pytest.mark.asyncio
+async def test_update_book_cover_and_summary(client):
+    """
+    Test updating a book's cover_image and summary fields.
+
+    Given: A book exists without cover_image and summary
+    When: PUT request is made with cover_image and summary
+    Then: Book is updated with status 200
+    And: Response contains updated fields
+    """
+    # Arrange - Create a book without cover_image and summary
+    create_payload = {
+        "title": "Test Book",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+    }
+    create_response = await client.post("/books/", json=create_payload)
+    created_book = create_response.json()
+    book_id = created_book["id"]
+    assert created_book["cover_image"] is None
+    assert created_book["summary"] is None
+
+    # Act - Update with cover_image and summary
+    update_payload = {
+        "cover_image": "https://example.com/cover.jpg",
+        "summary": "Test summary information",
+    }
+    response = await client.put(f"/books/{book_id}", json=update_payload)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book_id
+    assert data["cover_image"] == update_payload["cover_image"]
+    assert data["summary"] == update_payload["summary"]
+    assert data["title"] == create_payload["title"]
+    assert data["author"] == create_payload["author"]
 
 
 @pytest.mark.asyncio

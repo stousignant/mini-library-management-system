@@ -37,6 +37,11 @@ function handleDelete() {
     emit('delete', props.book.id)
   }
 }
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
+}
 </script>
 
 <template>
@@ -44,6 +49,28 @@ function handleDelete() {
     :data-testid="`book-item-${book.id}`"
     class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200"
   >
+    <div v-if="book.cover_image" class="w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+      <img
+        :src="book.cover_image"
+        :alt="`Cover of ${book.title}`"
+        class="h-full w-full object-cover"
+        @error="handleImageError"
+      />
+    </div>
+    <div v-else class="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+      <svg
+        class="w-16 h-16 text-gray-400"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </div>
+
     <div class="p-6">
       <div class="flex items-start justify-between mb-4">
         <h3 class="text-xl font-bold text-gray-900 flex-1 pr-2">
@@ -86,6 +113,10 @@ function handleDelete() {
             />
           </svg>
           <span>{{ book.isbn || 'No ISBN' }}</span>
+        </div>
+
+        <div v-if="book.summary" class="pt-2 text-gray-700 text-sm italic border-t border-gray-100">
+          {{ book.summary }}
         </div>
 
         <div

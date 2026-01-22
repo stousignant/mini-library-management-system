@@ -27,6 +27,8 @@ async def create_book(db: AsyncSession, book_data: BookCreate) -> Book:
         title=book_data.title,
         author=book_data.author,
         isbn=book_data.isbn,
+        cover_image=book_data.cover_image,
+        summary=book_data.summary,
         status=DEFAULT_BOOK_STATUS,
     )
 
