@@ -66,9 +66,7 @@ async def get_all_books(db: AsyncSession) -> list[Book]:
     return list(result.scalars().all())
 
 
-async def update_book(
-    db: AsyncSession, book_id: int, book_data: BookUpdate
-) -> Book | None:
+async def update_book(db: AsyncSession, book_id: int, book_data: BookUpdate) -> Book | None:
     """
     Update an existing book.
 

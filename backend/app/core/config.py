@@ -12,9 +12,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    database_url: str = (
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/library_dev"
-    )
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/library_dev"
     environment: str = "development"
     pythonunbuffered: str = "1"
 

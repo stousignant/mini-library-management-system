@@ -25,9 +25,7 @@ class Book(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(BOOK_TITLE_MAX_LENGTH), nullable=False)
-    author: Mapped[str] = mapped_column(
-        String(BOOK_AUTHOR_MAX_LENGTH), nullable=False
-    )
+    author: Mapped[str] = mapped_column(String(BOOK_AUTHOR_MAX_LENGTH), nullable=False)
     isbn: Mapped[str | None] = mapped_column(String(BOOK_ISBN_MAX_LENGTH), nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         Enum(BookStatus, native_enum=False),

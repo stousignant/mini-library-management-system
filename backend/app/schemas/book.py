@@ -20,12 +20,8 @@ from app.models.enums import BookStatus
 class BookCreate(BaseModel):
     """Schema for creating a new book."""
 
-    title: str = Field(
-        ..., min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_TITLE_MAX_LENGTH
-    )
-    author: str = Field(
-        ..., min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_AUTHOR_MAX_LENGTH
-    )
+    title: str = Field(..., min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_TITLE_MAX_LENGTH)
+    author: str = Field(..., min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_AUTHOR_MAX_LENGTH)
     isbn: str | None = Field(None, max_length=BOOK_ISBN_MAX_LENGTH)
 
 
