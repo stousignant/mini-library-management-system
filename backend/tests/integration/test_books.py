@@ -70,3 +70,36 @@ async def test_get_book_by_id(client):
     assert data["isbn"] == create_payload["isbn"]
     assert data["status"] == "AVAILABLE"
     assert "created_at" in data
+
+
+@pytest.mark.asyncio
+async def test_list_all_books(client):
+    """
+    Test retrieving all books via GET /books/.
+
+    Given: Multiple books exist in the database
+    When: GET request is made to /books/
+    Then: All books are retrieved with status 200
+    And: Response is a list containing all books
+    """
+    # Arrange - Create multiple books
+    books_data = [
+        {"title": "Clean Code", "author": "Robert C. Martin", "isbn": "978-0132350884"},
+        {"title": "Refactoring", "author": "Martin Fowler", "isbn": "978-0134757599"},
+        {"title": "Design Patterns", "author": "Gang of Four", "isbn": "978-0201633610"},
+    ]
+
+    for book_data in books_data:
+        await client.post("/books/", json=book_data)
+
+    # Act
+    response = await client.get("/books/")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 3
+    assert all("id" in book for book in data)
+    assert all("title" in book for book in data)
+    assert all("status" in book for book in data)

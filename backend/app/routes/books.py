@@ -34,6 +34,22 @@ async def create_book(
     return await book_service.create_book(db, book_data)
 
 
+@router.get("/", response_model=list[BookResponse], status_code=status.HTTP_200_OK)
+async def list_books(
+    db: AsyncSession = Depends(get_db),
+) -> list[Book]:
+    """
+    Retrieve all books from the library.
+
+    Args:
+        db: Database session
+
+    Returns:
+        List of all books
+    """
+    return await book_service.get_all_books(db)
+
+
 @router.get("/{book_id}", response_model=BookResponse, status_code=status.HTTP_200_OK)
 async def get_book(
     book_id: int,

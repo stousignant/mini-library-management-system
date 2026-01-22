@@ -50,3 +50,17 @@ async def get_book_by_id(db: AsyncSession, book_id: int) -> Book | None:
     """
     result = await db.execute(select(Book).where(Book.id == book_id))
     return result.scalar_one_or_none()
+
+
+async def get_all_books(db: AsyncSession) -> list[Book]:
+    """
+    Retrieve all books from the database.
+
+    Args:
+        db: Database session
+
+    Returns:
+        List of all book entities
+    """
+    result = await db.execute(select(Book))
+    return list(result.scalars().all())
