@@ -9,6 +9,8 @@ import os
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.constants import DEFAULT_DEV_DB_URL, DEFAULT_TEST_DB_URL
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -32,11 +34,11 @@ class Settings(BaseSettings):
 
         local_db_url = os.getenv(
             "LOCAL_DATABASE_URL",
-            "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test",
+            DEFAULT_TEST_DB_URL,
         )
         dev_db_url = os.getenv(
             "DEV_DATABASE_URL",
-            "postgresql+asyncpg://postgres:postgres@localhost:5432/library_dev",
+            DEFAULT_DEV_DB_URL,
         )
 
         environment_database_map = {
@@ -66,9 +68,9 @@ def get_test_database_url() -> str:
 
     Priority order:
     1. TEST_DATABASE_URL env var (dedicated test DB URL)
-    2. Hardcoded local test URL fallback
+    2. Default local test URL from constants
     """
     return os.getenv(
         "TEST_DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test",
+        DEFAULT_TEST_DB_URL,
     )
