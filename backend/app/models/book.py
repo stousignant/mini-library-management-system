@@ -4,7 +4,7 @@ SQLAlchemy Book model.
 Defines the database schema for books in the library system.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, Enum, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -33,6 +33,6 @@ class Book(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
