@@ -262,4 +262,157 @@ describe('bookStore', () => {
       expect(store.error).toBe('Failed to update book status')
     })
   })
+
+  describe('CRUD operations', () => {
+    it('addBook creates new book via POST', async () => {
+      const store = useBookStore()
+
+      const newBook: Book = {
+        id: 1,
+        title: 'New Book',
+        author: 'New Author',
+        isbn: '1234567890',
+        status: BookStatus.Available,
+        created_at: '2024-01-01T00:00:00Z'
+      }
+
+      vi.mocked(apiClient.post).mockResolvedValueOnce({ data: newBook })
+
+      await store.addBook({
+        title: 'New Book',
+        author: 'New Author',
+        isbn: '1234567890'
+      })
+
+      expect(apiClient.post).toHaveBeenCalledWith('/books/', {
+        title: 'New Book',
+        author: 'New Author',
+        isbn: '1234567890'
+      })
+      expect(store.books).toHaveLength(1)
+      expect(store.books[0]).toEqual(newBook)
+      expect(store.error).toBeNull()
+    })
+
+    it('addBook handles API errors', async () => {
+      const store = useBookStore()
+
+      vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(store.addBook({
+        title: 'New Book',
+        author: 'New Author'
+      })).rejects.toThrow()
+
+      expect(store.error).toBe('Failed to create book')
+      expect(store.books).toHaveLength(0)
+    })
+
+    it('updateBook updates existing book via PUT', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Old Title',
+          author: 'Old Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      const updatedBook: Book = {
+        id: 1,
+        title: 'Updated Title',
+        author: 'Old Author',
+        isbn: '1234567890',
+        status: BookStatus.Available,
+        created_at: '2024-01-01T00:00:00Z'
+      }
+
+      vi.mocked(apiClient.put).mockResolvedValueOnce({ data: updatedBook })
+
+      await store.updateBook(1, { title: 'Updated Title' })
+
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { title: 'Updated Title' })
+      expect(store.books[0].title).toBe('Updated Title')
+      expect(store.error).toBeNull()
+    })
+
+    it('updateBook handles API errors', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.put).mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(store.updateBook(1, { title: 'Updated Title' })).rejects.toThrow()
+
+      expect(store.error).toBe('Failed to update book')
+    })
+
+    it('deleteBook removes book via DELETE', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Book to Delete',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        },
+        {
+          id: 2,
+          title: 'Book to Keep',
+          author: 'Test Author',
+          isbn: '0987654321',
+          status: BookStatus.Available,
+          created_at: '2024-01-02T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.delete).mockResolvedValueOnce({ data: null })
+
+      await store.deleteBook(1)
+
+      expect(apiClient.delete).toHaveBeenCalledWith('/books/1')
+      expect(store.books).toHaveLength(1)
+      expect(store.books[0].id).toBe(2)
+      expect(store.error).toBeNull()
+    })
+
+    it('deleteBook handles API errors', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.delete).mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(store.deleteBook(1)).rejects.toThrow()
+
+      expect(store.error).toBe('Failed to delete book')
+      expect(store.books).toHaveLength(1)
+    })
+  })
 })

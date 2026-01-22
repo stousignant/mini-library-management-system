@@ -54,5 +54,58 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
-  return { books, isLoading, error, searchQuery, filteredBooks, fetchBooks, toggleStatus }
+  async function addBook(bookData: { title: string; author: string; isbn?: string }) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await apiClient.post<Book>('/books/', bookData)
+      books.value.push(response.data)
+    } catch (_err) {
+      error.value = 'Failed to create book'
+      throw _err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateBook(bookId: number, bookData: Partial<{ title: string; author: string; isbn: string }>) {
+    error.value = null
+
+    try {
+      const response = await apiClient.put<Book>(`/books/${bookId}`, bookData)
+      const index = books.value.findIndex(b => b.id === bookId)
+      if (index !== -1) {
+        books.value[index] = response.data
+      }
+    } catch (_err) {
+      error.value = 'Failed to update book'
+      throw _err
+    }
+  }
+
+  async function deleteBook(bookId: number) {
+    error.value = null
+
+    try {
+      await apiClient.delete(`/books/${bookId}`)
+      books.value = books.value.filter(b => b.id !== bookId)
+    } catch (_err) {
+      error.value = 'Failed to delete book'
+      throw _err
+    }
+  }
+
+  return {
+    books,
+    isLoading,
+    error,
+    searchQuery,
+    filteredBooks,
+    fetchBooks,
+    toggleStatus,
+    addBook,
+    updateBook,
+    deleteBook
+  }
 })
