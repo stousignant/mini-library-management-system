@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Book } from '@/types/Book'
 import apiClient from '@/services/api'
@@ -7,6 +7,17 @@ export const useBookStore = defineStore('book', () => {
   const books = ref<Book[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const searchQuery = ref('')
+
+  const filteredBooks = computed(() => {
+    const query = searchQuery.value.toLowerCase().trim()
+    if (!query) return books.value
+
+    return books.value.filter(book =>
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query)
+    )
+  })
 
   async function fetchBooks() {
     isLoading.value = true
@@ -23,5 +34,5 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
-  return { books, isLoading, error, fetchBooks }
+  return { books, isLoading, error, searchQuery, filteredBooks, fetchBooks }
 })

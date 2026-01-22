@@ -41,17 +41,31 @@ const getStatusColor = (status: BookStatus) => {
     </div>
 
     <div v-else data-testid="book-list">
-      <div v-if="bookStore.books.length === 0" class="text-center py-12 text-gray-500">
+      <div class="mb-6">
+        <input
+          v-model="bookStore.searchQuery"
+          type="text"
+          placeholder="Search by title or author..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          data-testid="search-input"
+        />
+      </div>
+
+      <div v-if="bookStore.filteredBooks.length === 0" class="text-center py-12 text-gray-500">
         <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        <p class="text-lg font-medium">No books found</p>
-        <p class="text-sm mt-1">Add your first book to get started</p>
+        <p class="text-lg font-medium">
+          {{ bookStore.searchQuery ? 'No books match your search' : 'No books found' }}
+        </p>
+        <p class="text-sm mt-1">
+          {{ bookStore.searchQuery ? 'Try a different search term' : 'Add your first book to get started' }}
+        </p>
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
-          v-for="book in bookStore.books"
+          v-for="book in bookStore.filteredBooks"
           :key="book.id"
           :data-testid="`book-item-${book.id}`"
           class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200"
