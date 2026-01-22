@@ -31,3 +31,12 @@ BOOK_FIELD_MIN_LENGTH = 1
 # Database Configuration
 DB_TEST_CONNECT_ARGS = {"server_settings": {"jit": "off"}, "ssl": "disable"}
 DEFAULT_TEST_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test"
+
+# CORS Configuration
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_METHODS = ["*"]
+CORS_ALLOW_ALL_HEADERS = ["*"]

@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import get_cors_origins
 from app.core.constants import (
     APP_DESCRIPTION,
     APP_TITLE,
     APP_VERSION,
+    CORS_ALLOW_ALL_HEADERS,
+    CORS_ALLOW_ALL_METHODS,
+    CORS_ALLOW_CREDENTIALS,
     HEALTH_STATUS_HEALTHY,
     ROOT_MESSAGE,
 )
@@ -18,14 +22,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://172.24.98.124:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=get_cors_origins(),
+    allow_credentials=CORS_ALLOW_CREDENTIALS,
+    allow_methods=CORS_ALLOW_ALL_METHODS,
+    allow_headers=CORS_ALLOW_ALL_HEADERS,
 )
 
 app.include_router(books.router)

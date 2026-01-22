@@ -9,7 +9,7 @@ import os
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.constants import DEFAULT_TEST_DB_URL
+from app.core.constants import DEFAULT_CORS_ORIGINS, DEFAULT_TEST_DB_URL
 
 
 class Settings(BaseSettings):
@@ -69,3 +69,16 @@ def get_test_database_url() -> str:
         "TEST_DATABASE_URL",
         DEFAULT_TEST_DB_URL,
     )
+
+
+def get_cors_origins() -> list[str]:
+    """Get CORS origins from environment or use defaults.
+
+    Priority order:
+    1. CORS_ORIGINS env var (comma-separated list)
+    2. Default CORS origins from constants
+    """
+    cors_env = os.getenv("CORS_ORIGINS")
+    if cors_env:
+        return [origin.strip() for origin in cors_env.split(",")]
+    return DEFAULT_CORS_ORIGINS
