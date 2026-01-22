@@ -103,3 +103,42 @@ async def test_list_all_books(client):
     assert all("id" in book for book in data)
     assert all("title" in book for book in data)
     assert all("status" in book for book in data)
+
+
+@pytest.mark.asyncio
+async def test_update_book(client):
+    """
+    Test updating a book via PUT /books/{id}.
+
+    Given: A book exists in the database
+    When: PUT request is made with updated data
+    Then: Book is updated with status 200
+    And: Response contains updated book fields
+    """
+    # Arrange - Create a book first
+    create_payload = {
+        "title": "Original Title",
+        "author": "Original Author",
+        "isbn": "978-0000000000",
+    }
+    create_response = await client.post("/books/", json=create_payload)
+    created_book = create_response.json()
+    book_id = created_book["id"]
+
+    # Act - Update the book
+    update_payload = {
+        "title": "Updated Title",
+        "author": "Updated Author",
+        "isbn": "978-1111111111",
+    }
+    response = await client.put(f"/books/{book_id}", json=update_payload)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book_id
+    assert data["title"] == update_payload["title"]
+    assert data["author"] == update_payload["author"]
+    assert data["isbn"] == update_payload["isbn"]
+    assert data["status"] == "AVAILABLE"
+    assert "created_at" in data

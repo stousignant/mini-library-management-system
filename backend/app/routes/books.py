@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.book import Book
-from app.schemas.book import BookCreate, BookResponse
+from app.schemas.book import BookCreate, BookResponse, BookUpdate
 from app.services import book_service
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -69,6 +69,35 @@ async def get_book(
         HTTPException: 404 if book not found
     """
     book = await book_service.get_book_by_id(db, book_id)
+    if book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Book with id {book_id} not found",
+        )
+    return book
+
+
+@router.put("/{book_id}", response_model=BookResponse, status_code=status.HTTP_200_OK)
+async def update_book(
+    book_id: int,
+    book_data: BookUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Book:
+    """
+    Update a book by its ID.
+
+    Args:
+        book_id: ID of the book to update
+        book_data: Updated book data
+        db: Database session
+
+    Returns:
+        Updated book entity
+
+    Raises:
+        HTTPException: 404 if book not found
+    """
+    book = await book_service.update_book(db, book_id, book_data)
     if book is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

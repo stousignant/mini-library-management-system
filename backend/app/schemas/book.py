@@ -29,6 +29,14 @@ class BookCreate(BaseModel):
     isbn: str | None = Field(None, max_length=BOOK_ISBN_MAX_LENGTH)
 
 
+class BookUpdate(BaseModel):
+    """Schema for updating an existing book."""
+
+    title: str | None = Field(None, min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_TITLE_MAX_LENGTH)
+    author: str | None = Field(None, min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_AUTHOR_MAX_LENGTH)
+    isbn: str | None = Field(None, max_length=BOOK_ISBN_MAX_LENGTH)
+
+
 class BookResponse(BaseModel):
     """Schema for book response."""
 
