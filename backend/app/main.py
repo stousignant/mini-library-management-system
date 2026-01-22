@@ -1,7 +1,10 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import make_url
 
-from app.core.config import get_cors_origins
+from app.core.config import get_cors_origins, get_settings
 from app.core.constants import (
     APP_DESCRIPTION,
     APP_TITLE,
@@ -13,6 +16,15 @@ from app.core.constants import (
     ROOT_MESSAGE,
 )
 from app.routes import books
+
+logger = logging.getLogger(__name__)
+
+settings = get_settings()
+db_url = make_url(settings.database_url)
+logger.info(f"Environment: {settings.environment}")
+logger.info(f"Database host: {db_url.host}")
+logger.info(f"Database port: {db_url.port}")
+logger.info(f"Database name: {db_url.database}")
 
 app = FastAPI(
     title=APP_TITLE,
@@ -38,4 +50,21 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": HEALTH_STATUS_HEALTHY}
+    from sqlalchemy import text
+
+    from app.core.database import async_engine
+
+    db_status = "unknown"
+    try:
+        async with async_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {type(e).__name__}"
+        logger.error(f"Database health check failed: {e}")
+
+    return {
+        "status": HEALTH_STATUS_HEALTHY,
+        "database": db_status,
+        "environment": settings.environment,
+    }
