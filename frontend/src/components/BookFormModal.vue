@@ -16,7 +16,7 @@ const emit = defineEmits<{
       isbn?: string
       cover_image?: string
       summary?: string
-    }
+    },
   ]
 }>()
 
