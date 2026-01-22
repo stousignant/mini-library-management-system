@@ -1,5 +1,7 @@
 # Library Management System
 
+[![CI](https://github.com/stousignant/mini-library-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/stousignant/mini-library-management-system/actions/workflows/ci.yml)
+
 A modern, full-stack library management system built with FastAPI and Vue 3, following Test-Driven Development (TDD) principles.
 
 ## Overview
