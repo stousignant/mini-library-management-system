@@ -40,6 +40,9 @@ htmlcov/
 *.db
 *.sqlite3
 
+# Frontend
+node_modules/
+
 # Logs
 *.log
 
