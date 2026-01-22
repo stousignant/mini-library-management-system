@@ -7,7 +7,8 @@ for production environments like Supabase.
 
 import pytest
 
-from app.core.config import Settings
+from app.core.config import Settings, get_cors_origins
+from app.core.constants import DEFAULT_CORS_ORIGINS
 from app.core.database import build_database_url_with_ssl
 
 
@@ -147,3 +148,79 @@ class TestDatabaseCredentialSecurity:
 
         settings = Settings(_env_file=None)
         assert settings.database_url == dev_url
+
+
+class TestCORSOriginsConfiguration:
+    """Test CORS origins configuration and fallback behavior."""
+
+    def test_cors_origins_from_env_with_valid_origins(self, monkeypatch):
+        """
+        Test CORS origins are correctly parsed from environment variable.
+
+        Given: CORS_ORIGINS env var with comma-separated valid origins
+        When: get_cors_origins is called
+        Then: Returns trimmed list of origins
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000,http://example.com")
+        result = get_cors_origins()
+        assert result == ["http://localhost:3000", "http://example.com"]
+
+    def test_cors_origins_from_env_with_whitespace(self, monkeypatch):
+        """
+        Test CORS origins are trimmed when env var has extra whitespace.
+
+        Given: CORS_ORIGINS env var with whitespace around origins
+        When: get_cors_origins is called
+        Then: Returns trimmed origins without whitespace
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "  http://localhost:3000  , http://example.com  ")
+        result = get_cors_origins()
+        assert result == ["http://localhost:3000", "http://example.com"]
+
+    def test_cors_origins_filters_empty_strings(self, monkeypatch):
+        """
+        Test empty strings are filtered out from CORS origins.
+
+        Given: CORS_ORIGINS env var with empty/blank entries
+        When: get_cors_origins is called
+        Then: Returns only non-empty origins
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000, , ,http://example.com,  ")
+        result = get_cors_origins()
+        assert result == ["http://localhost:3000", "http://example.com"]
+
+    def test_cors_origins_fallback_when_only_empty_strings(self, monkeypatch):
+        """
+        Test fallback to defaults when all entries are empty/whitespace.
+
+        Given: CORS_ORIGINS env var with only empty/whitespace entries
+        When: get_cors_origins is called
+        Then: Returns DEFAULT_CORS_ORIGINS
+        """
+        monkeypatch.setenv("CORS_ORIGINS", " , , ,  ")
+        result = get_cors_origins()
+        assert result == DEFAULT_CORS_ORIGINS
+
+    def test_cors_origins_fallback_when_env_not_set(self, monkeypatch):
+        """
+        Test fallback to defaults when CORS_ORIGINS env var is not set.
+
+        Given: No CORS_ORIGINS env var
+        When: get_cors_origins is called
+        Then: Returns DEFAULT_CORS_ORIGINS
+        """
+        monkeypatch.delenv("CORS_ORIGINS", raising=False)
+        result = get_cors_origins()
+        assert result == DEFAULT_CORS_ORIGINS
+
+    def test_cors_origins_fallback_when_env_is_empty_string(self, monkeypatch):
+        """
+        Test fallback to defaults when CORS_ORIGINS env var is empty string.
+
+        Given: CORS_ORIGINS env var set to empty string
+        When: get_cors_origins is called
+        Then: Returns DEFAULT_CORS_ORIGINS
+        """
+        monkeypatch.setenv("CORS_ORIGINS", "")
+        result = get_cors_origins()
+        assert result == DEFAULT_CORS_ORIGINS
