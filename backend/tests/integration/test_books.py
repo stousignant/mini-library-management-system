@@ -145,6 +145,49 @@ async def test_update_book(client):
 
 
 @pytest.mark.asyncio
+async def test_update_book_status(client):
+    """
+    Test updating a book's status via PUT /books/{id}.
+
+    Given: A book exists with status AVAILABLE
+    When: PUT request is made with status BORROWED
+    Then: Book status is updated with status 200
+    And: Response contains updated status
+    """
+    # Arrange - Create a book first
+    create_payload = {
+        "title": "Book to Borrow",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+    }
+    create_response = await client.post("/books/", json=create_payload)
+    created_book = create_response.json()
+    book_id = created_book["id"]
+    assert created_book["status"] == "AVAILABLE"
+
+    # Act - Update status to BORROWED
+    update_payload = {"status": "BORROWED"}
+    response = await client.put(f"/books/{book_id}", json=update_payload)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book_id
+    assert data["status"] == "BORROWED"
+    assert data["title"] == create_payload["title"]
+    assert data["author"] == create_payload["author"]
+
+    # Act - Update status back to AVAILABLE
+    update_payload = {"status": "AVAILABLE"}
+    response = await client.put(f"/books/{book_id}", json=update_payload)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "AVAILABLE"
+
+
+@pytest.mark.asyncio
 async def test_delete_book(client):
     """
     Test deleting a book via DELETE /books/{id}.

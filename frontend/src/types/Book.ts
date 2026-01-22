@@ -1,6 +1,6 @@
 export enum BookStatus {
-  Available = "AVAILABLE",
-  Borrowed = "BORROWED"
+  Available = 'AVAILABLE',
+  Borrowed = 'BORROWED',
 }
 
 export interface Book {
