@@ -29,7 +29,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency that provides a database session.
 
-    Yields an async database session and ensures proper cleanup.
+    Yields an async database session with explicit transaction management.
+    Ensures rollback on errors and proper cleanup.
     """
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            async with session.begin():
+                yield session
+        except:
+            await session.rollback()
+            raise
