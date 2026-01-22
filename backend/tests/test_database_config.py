@@ -5,6 +5,8 @@ Verifies that database URLs are properly configured with SSL
 for production environments like Supabase.
 """
 
+import ssl
+
 import pytest
 
 from app.core.config import Settings, get_cors_origins
@@ -24,9 +26,10 @@ class TestAsyncDatabaseURLConfiguration:
         Then: URL is converted to use asyncpg driver
         """
         standard_url = "postgresql://user:pass@localhost:5432/mydb"
-        result = build_async_database_url(standard_url)
-        assert result.startswith("postgresql+asyncpg://")
-        assert "user:pass@localhost:5432/mydb" in result
+        url, connect_args = build_async_database_url(standard_url)
+        assert url.startswith("postgresql+asyncpg://")
+        assert "user:pass@localhost:5432/mydb" in url
+        assert connect_args == {}
 
     def test_asyncpg_driver_unchanged(self):
         """
@@ -37,112 +40,120 @@ class TestAsyncDatabaseURLConfiguration:
         Then: Driver specification remains unchanged
         """
         async_url = "postgresql+asyncpg://user:pass@localhost:5432/mydb"
-        result = build_async_database_url(async_url)
-        assert result == async_url
+        url, connect_args = build_async_database_url(async_url)
+        assert url == async_url
+        assert connect_args == {}
 
     def test_supabase_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that Supabase URLs get both driver conversion and SSL.
+        Test that Supabase URLs get both driver conversion and SSL context.
 
         Given: A Supabase URL with standard postgresql:// driver
         When: build_async_database_url is called
-        Then: Driver is converted and SSL parameter is appended
+        Then: Driver is converted and SSL context is in connect_args
         """
         supabase_url = "postgresql://user:pass@db.supabase.co/postgres"
-        result = build_async_database_url(supabase_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=require" in result
+        url, connect_args = build_async_database_url(supabase_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
     def test_railway_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that Railway URLs get both driver conversion and SSL.
+        Test that Railway URLs get both driver conversion and SSL context.
 
         Given: A Railway PostgreSQL URL
         When: build_async_database_url is called
-        Then: Driver is converted and SSL parameter is appended
+        Then: Driver is converted and SSL context is in connect_args
         """
         railway_url = "postgresql://user:pass@containers-us-west-123.railway.app:5432/railway"
-        result = build_async_database_url(railway_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=require" in result
+        url, connect_args = build_async_database_url(railway_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
     def test_render_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that Render URLs get both driver conversion and SSL.
+        Test that Render URLs get both driver conversion and SSL context.
 
         Given: A Render PostgreSQL URL
         When: build_async_database_url is called
-        Then: Driver is converted and SSL parameter is appended
+        Then: Driver is converted and SSL context is in connect_args
         """
         render_url = "postgresql://user:pass@dpg-abc123.render.com:5432/mydb"
-        result = build_async_database_url(render_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=require" in result
+        url, connect_args = build_async_database_url(render_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
     def test_flyio_url_gets_ssl_and_driver_conversion(self):
         """
-        Test that Fly.io URLs get both driver conversion and SSL.
+        Test that Fly.io URLs get both driver conversion and SSL context.
 
         Given: A Fly.io PostgreSQL URL
         When: build_async_database_url is called
-        Then: Driver is converted and SSL parameter is appended
+        Then: Driver is converted and SSL context is in connect_args
         """
         flyio_url = "postgresql://user:pass@top1.fly.io:5432/mydb"
-        result = build_async_database_url(flyio_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=require" in result
+        url, connect_args = build_async_database_url(flyio_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
-    def test_production_url_with_existing_params_gets_ssl(self):
+    def test_production_url_with_existing_params_gets_ssl_context(self):
         """
-        Test SSL is added to production URLs with existing query parameters.
+        Test SSL context is provided for production URLs with existing query parameters.
 
         Given: A production URL with existing query parameters
         When: build_async_database_url is called
-        Then: SSL parameter is added to existing parameters
+        Then: SSL context is in connect_args, existing params preserved
         """
         railway_url = "postgresql://user:pass@db.railway.app/postgres?connect_timeout=10"
-        result = build_async_database_url(railway_url)
-        assert "ssl=require" in result
-        assert "connect_timeout=10" in result
-        assert "postgresql+asyncpg://" in result
+        url, connect_args = build_async_database_url(railway_url)
+        assert "connect_timeout=10" in url
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
-    def test_production_url_with_ssl_already_present_unchanged(self):
+    def test_production_url_with_ssl_query_param_gets_ssl_context(self):
         """
-        Test that existing SSL parameters are not duplicated.
+        Test that production URLs get SSL context regardless of query params.
 
-        Given: A production URL that already has ssl parameter
+        Given: A production URL with ssl query parameter
         When: build_async_database_url is called
-        Then: SSL is not duplicated, only driver is converted
+        Then: SSL context is provided via connect_args
         """
         railway_url = "postgresql://user:pass@db.railway.app/postgres?ssl=require"
-        result = build_async_database_url(railway_url)
-        assert result == "postgresql+asyncpg://user:pass@db.railway.app/postgres?ssl=require"
+        url, connect_args = build_async_database_url(railway_url)
+        assert "postgresql+asyncpg://" in url
+        assert "ssl" in connect_args
+        assert isinstance(connect_args["ssl"], ssl.SSLContext)
 
     def test_local_url_gets_driver_conversion_only(self):
         """
-        Test that local URLs get driver conversion but not SSL.
+        Test that local URLs get driver conversion but not SSL context.
 
         Given: A localhost database URL
         When: build_async_database_url is called
-        Then: Driver is converted but SSL is not added
+        Then: Driver is converted but connect_args is empty
         """
         local_url = "postgresql://postgres:postgres@localhost:5432/library_dev"
-        result = build_async_database_url(local_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=" not in result
+        url, connect_args = build_async_database_url(local_url)
+        assert "postgresql+asyncpg://" in url
+        assert connect_args == {}
 
     def test_local_test_url_gets_driver_conversion_only(self):
         """
-        Test that local test URLs get driver conversion but not SSL.
+        Test that local test URLs get driver conversion but not SSL context.
 
         Given: A local test database URL
         When: build_async_database_url is called
-        Then: Driver is converted but SSL is not added
+        Then: Driver is converted but connect_args is empty
         """
         test_url = "postgresql://postgres:postgres@localhost:5433/library_test"
-        result = build_async_database_url(test_url)
-        assert "postgresql+asyncpg://" in result
-        assert "ssl=" not in result
+        url, connect_args = build_async_database_url(test_url)
+        assert "postgresql+asyncpg://" in url
+        assert connect_args == {}
 
 
 class TestDatabaseCredentialSecurity:

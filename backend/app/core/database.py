@@ -4,6 +4,7 @@ Database connection and session management.
 Provides async database engine and session factory for the application.
 """
 
+import ssl
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.engine import make_url
@@ -12,19 +13,19 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import get_settings
 
 
-def build_async_database_url(database_url: str) -> str:
+def build_async_database_url(database_url: str) -> tuple[str, dict]:
     """
     Build async database URL with proper driver and SSL configuration.
 
     Converts postgresql:// to postgresql+asyncpg:// for async support.
-    Automatically appends ssl=require for production databases (Supabase, Railway, etc).
+    Returns SSL context in connect_args for production databases (Supabase, Railway, etc).
     Local development and test URLs remain unchanged (except for driver conversion).
 
     Args:
         database_url: The base database URL
 
     Returns:
-        Database URL with async driver and SSL parameter if needed
+        Tuple of (database_url, connect_args) where connect_args may contain SSL context
     """
     url = make_url(database_url)
 
@@ -35,21 +36,22 @@ def build_async_database_url(database_url: str) -> str:
         host in str(url) for host in ["railway.app", "render.com", "fly.io"]
     )
 
+    connect_args = {}
     if is_production_db:
-        query = dict(url.query)
-        if "ssl" not in query:
-            query["ssl"] = "require"
-            return url.set(query=query).render_as_string(hide_password=False)
+        connect_args["ssl"] = ssl.create_default_context()
 
-    return url.render_as_string(hide_password=False)
+    return url.render_as_string(hide_password=False), connect_args
 
 
 settings = get_settings()
 
+database_url, connect_args = build_async_database_url(settings.database_url)
+
 async_engine = create_async_engine(
-    build_async_database_url(settings.database_url),
+    database_url,
     echo=False,
     future=True,
+    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(
