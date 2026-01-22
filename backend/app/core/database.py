@@ -5,8 +5,8 @@ Provides async database engine and session factory for the application.
 """
 
 from collections.abc import AsyncGenerator
-from urllib.parse import parse_qs, urlparse, urlunparse
 
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -25,19 +25,17 @@ def build_database_url_with_ssl(database_url: str) -> str:
     Returns:
         Database URL with SSL parameter if needed
     """
-    if "supabase" not in database_url:
+    url = make_url(database_url)
+
+    if "supabase" not in str(url):
         return database_url
 
-    if "ssl=" in database_url:
-        return database_url
+    query = dict(url.query)
+    if "ssl" not in query:
+        query["ssl"] = "require"
+        return url.set(query=query).render_as_string(hide_password=False)
 
-    parsed = urlparse(database_url)
-    query_params = parse_qs(parsed.query) if parsed.query else {}
-    query_params["ssl"] = ["require"]
-
-    query_string = "&".join(f"{key}={value[0]}" for key, value in query_params.items())
-
-    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, query_string, parsed.fragment))
+    return database_url
 
 
 settings = get_settings()
