@@ -80,4 +80,5 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
         env:
+          ENVIRONMENT: local
           TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
