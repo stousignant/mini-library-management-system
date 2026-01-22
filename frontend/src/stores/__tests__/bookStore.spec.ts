@@ -46,7 +46,7 @@ describe('bookStore', () => {
 
     await promise
 
-    expect(apiClient.get).toHaveBeenCalledWith('/books')
+    expect(apiClient.get).toHaveBeenCalledWith('/books/')
     expect(store.books).toEqual(mockBooks)
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
