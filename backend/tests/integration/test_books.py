@@ -36,3 +36,37 @@ async def test_create_book(client):
     assert data["isbn"] == payload["isbn"]
     assert data["status"] == "AVAILABLE"
     assert "created_at" in data
+
+
+@pytest.mark.asyncio
+async def test_get_book_by_id(client):
+    """
+    Test retrieving a single book by ID via GET /books/{id}.
+
+    Given: A book exists in the database
+    When: GET request is made to /books/{id}
+    Then: Book is retrieved with status 200
+    And: Response contains all book fields
+    """
+    # Arrange - Create a book first
+    create_payload = {
+        "title": "Clean Code",
+        "author": "Robert C. Martin",
+        "isbn": "978-0132350884",
+    }
+    create_response = await client.post("/books/", json=create_payload)
+    created_book = create_response.json()
+    book_id = created_book["id"]
+
+    # Act
+    response = await client.get(f"/books/{book_id}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == book_id
+    assert data["title"] == create_payload["title"]
+    assert data["author"] == create_payload["author"]
+    assert data["isbn"] == create_payload["isbn"]
+    assert data["status"] == "AVAILABLE"
+    assert "created_at" in data

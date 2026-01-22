@@ -5,7 +5,7 @@ Handles HTTP endpoints for book CRUD operations.
 Delegates business logic to the service layer.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -32,3 +32,30 @@ async def create_book(
         Created book with id, status, and created_at
     """
     return await book_service.create_book(db, book_data)
+
+
+@router.get("/{book_id}", response_model=BookResponse, status_code=status.HTTP_200_OK)
+async def get_book(
+    book_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Book:
+    """
+    Retrieve a book by its ID.
+
+    Args:
+        book_id: ID of the book to retrieve
+        db: Database session
+
+    Returns:
+        Book entity if found
+
+    Raises:
+        HTTPException: 404 if book not found
+    """
+    book = await book_service.get_book_by_id(db, book_id)
+    if book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Book with id {book_id} not found",
+        )
+    return book

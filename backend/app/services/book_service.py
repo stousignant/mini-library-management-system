@@ -4,6 +4,7 @@ Book service layer.
 Handles business logic and database operations for books.
 """
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import DEFAULT_BOOK_STATUS
@@ -34,3 +35,18 @@ async def create_book(db: AsyncSession, book_data: BookCreate) -> Book:
     await db.refresh(book)
 
     return book
+
+
+async def get_book_by_id(db: AsyncSession, book_id: int) -> Book | None:
+    """
+    Retrieve a book by its ID.
+
+    Args:
+        db: Database session
+        book_id: ID of the book to retrieve
+
+    Returns:
+        Book entity if found, None otherwise
+    """
+    result = await db.execute(select(Book).where(Book.id == book_id))
+    return result.scalar_one_or_none()
