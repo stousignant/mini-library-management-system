@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Enum, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from app.core.constants import (
+    BOOK_AUTHOR_MAX_LENGTH,
+    BOOK_ISBN_MAX_LENGTH,
+    BOOK_TITLE_MAX_LENGTH,
+)
 from app.models.enums import BookStatus
 
 
@@ -24,9 +29,11 @@ class Book(Base):
     __tablename__ = "books"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    author: Mapped[str] = mapped_column(String(255), nullable=False)
-    isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    title: Mapped[str] = mapped_column(String(BOOK_TITLE_MAX_LENGTH), nullable=False)
+    author: Mapped[str] = mapped_column(
+        String(BOOK_AUTHOR_MAX_LENGTH), nullable=False
+    )
+    isbn: Mapped[str | None] = mapped_column(String(BOOK_ISBN_MAX_LENGTH), nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         Enum(BookStatus, native_enum=False),
         nullable=False,

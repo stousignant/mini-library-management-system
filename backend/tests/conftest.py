@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from app.core.config import get_test_database_url
+from app.core.constants import DB_TEST_CONNECT_ARGS
 from app.core.database import get_db
 from app.main import app
 from app.models.book import Base
@@ -30,8 +31,8 @@ async def async_engine(test_database_url):
         test_database_url,
         echo=False,
         future=True,
-        poolclass=NullPool,  # Use NullPool to avoid connection pool issues
-        connect_args={"server_settings": {"jit": "off"}, "ssl": "disable"},
+        poolclass=NullPool,
+        connect_args=DB_TEST_CONNECT_ARGS,
     )
 
     async with engine.begin() as conn:

@@ -23,3 +23,10 @@ DEFAULT_PORT = 8000
 
 # Book Configuration
 DEFAULT_BOOK_STATUS = BookStatus.AVAILABLE
+BOOK_TITLE_MAX_LENGTH = 255
+BOOK_AUTHOR_MAX_LENGTH = 255
+BOOK_ISBN_MAX_LENGTH = 20
+BOOK_FIELD_MIN_LENGTH = 1
+
+# Database Configuration
+DB_TEST_CONNECT_ARGS = {"server_settings": {"jit": "off"}, "ssl": "disable"}
