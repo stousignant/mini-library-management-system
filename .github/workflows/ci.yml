@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      - name: Run pre-commit checks
+        run: uv run pre-commit run --all-files
+
       - name: Run ruff linting
         run: uv run ruff check .
 
@@ -77,4 +80,4 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
         env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
+          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test

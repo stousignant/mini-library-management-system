@@ -5,8 +5,10 @@ repos:
       # Run the linter
       - id: ruff
         args: [--fix]
+        files: ^backend/
       # Run the formatter
       - id: ruff-format
+        files: ^backend/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
