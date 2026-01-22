@@ -35,5 +35,5 @@ def get_test_database_url() -> str:
     """Get test database URL from environment or use default."""
     return os.getenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/library_test",
+        "postgresql+asyncpg://postgres:postgres@localhost:5433/library_test",
     )

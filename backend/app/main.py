@@ -7,12 +7,15 @@ from app.core.constants import (
     HEALTH_STATUS_HEALTHY,
     ROOT_MESSAGE,
 )
+from app.routes import books
 
 app = FastAPI(
     title=APP_TITLE,
     description=APP_DESCRIPTION,
     version=APP_VERSION,
 )
+
+app.include_router(books.router)
 
 
 @app.get("/")

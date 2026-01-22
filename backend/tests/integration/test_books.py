@@ -11,7 +11,7 @@ import pytest
 async def test_create_book(client):
     """
     Test creating a new book via POST /books/.
-    
+
     Given: Valid book data (title, author, isbn)
     When: POST request is made to /books/
     Then: Book is created with status 201
