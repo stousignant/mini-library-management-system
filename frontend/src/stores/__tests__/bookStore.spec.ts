@@ -192,4 +192,74 @@ describe('bookStore', () => {
       expect(store.filteredBooks).toEqual(store.books)
     })
   })
+
+  describe('toggleStatus', () => {
+    it('toggles book from AVAILABLE to BORROWED', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
+
+      await store.toggleStatus(1)
+
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { status: BookStatus.Borrowed })
+      expect(store.books[0].status).toBe(BookStatus.Borrowed)
+      expect(store.error).toBeNull()
+    })
+
+    it('toggles book from BORROWED to AVAILABLE', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Borrowed,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
+
+      await store.toggleStatus(1)
+
+      expect(apiClient.put).toHaveBeenCalledWith('/books/1', { status: BookStatus.Available })
+      expect(store.books[0].status).toBe(BookStatus.Available)
+      expect(store.error).toBeNull()
+    })
+
+    it('reverts status on API failure', async () => {
+      const store = useBookStore()
+
+      store.books = [
+        {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ]
+
+      vi.mocked(apiClient.put).mockRejectedValueOnce(new Error('Network error'))
+
+      await store.toggleStatus(1)
+
+      expect(store.books[0].status).toBe(BookStatus.Available)
+      expect(store.error).toBe('Failed to update book status')
+    })
+  })
 })

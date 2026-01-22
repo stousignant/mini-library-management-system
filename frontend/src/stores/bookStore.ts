@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Book } from '@/types/Book'
+import { BookStatus } from '@/types/Book'
 import apiClient from '@/services/api'
 
 export const useBookStore = defineStore('book', () => {
@@ -34,5 +35,24 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
-  return { books, isLoading, error, searchQuery, filteredBooks, fetchBooks }
+  async function toggleStatus(bookId: number) {
+    const book = books.value.find(b => b.id === bookId)
+    if (!book) return
+
+    const originalStatus = book.status
+    const newStatus = originalStatus === BookStatus.Available
+      ? BookStatus.Borrowed
+      : BookStatus.Available
+
+    book.status = newStatus
+
+    try {
+      await apiClient.put(`/books/${bookId}`, { status: newStatus })
+    } catch (_err) {
+      book.status = originalStatus
+      error.value = 'Failed to update book status'
+    }
+  }
+
+  return { books, isLoading, error, searchQuery, filteredBooks, fetchBooks, toggleStatus }
 })
