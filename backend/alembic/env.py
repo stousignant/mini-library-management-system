@@ -24,6 +24,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.models import Base  # noqa: E402
+from app.models.book import Book  # noqa: E402, F401
 
 target_metadata = Base.metadata
 
