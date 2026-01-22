@@ -11,11 +11,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from alembic import command
+from alembic.config import Config
 from app.core.config import get_test_database_url
 from app.core.constants import DB_TEST_CONNECT_ARGS
 from app.core.database import get_db
 from app.main import app
-from app.models import Base
 
 
 @pytest.fixture(scope="session")
@@ -24,9 +25,31 @@ def test_database_url():
     return get_test_database_url()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(test_database_url):
+    """
+    Apply Alembic migrations to test database before tests run.
+
+    This fixture runs automatically at session start and ensures
+    the test database has the proper schema via migrations.
+    """
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", test_database_url)
+
+    command.upgrade(alembic_cfg, "head")
+
+    yield
+
+    command.downgrade(alembic_cfg, "base")
+
+
 @pytest_asyncio.fixture(scope="function")
-async def async_engine(test_database_url):
-    """Create async database engine for tests."""
+async def async_engine(test_database_url, setup_database):
+    """
+    Create async database engine for tests.
+
+    Schema is managed by the setup_database fixture via Alembic migrations.
+    """
     engine = create_async_engine(
         test_database_url,
         echo=False,
@@ -35,13 +58,7 @@ async def async_engine(test_database_url):
         connect_args=DB_TEST_CONNECT_ARGS,
     )
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     yield engine
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
     await engine.dispose()
 
