@@ -1,8 +1,10 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '@/services/supabase'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import apiClient from '@/services/api'
+
+let authSubscription: { unsubscribe: () => void } | null = null
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -50,17 +52,24 @@ export const useAuthStore = defineStore('auth', () => {
         await fetchUserProfile()
       }
 
-      supabase.auth.onAuthStateChange(async (_event, newSession) => {
-        session.value = newSession
-        user.value = newSession?.user ?? null
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+      }
 
-        if (newSession) {
-          await fetchUserProfile()
-        } else {
-          userRole.value = null
-          error.value = null
+      const { data } = supabase.auth.onAuthStateChange(
+        async (_event: AuthChangeEvent, newSession: Session | null) => {
+          session.value = newSession
+          user.value = newSession?.user ?? null
+
+          if (newSession) {
+            await fetchUserProfile()
+          } else {
+            userRole.value = null
+            error.value = null
+          }
         }
-      })
+      )
+      authSubscription = data.subscription
     } catch (err) {
       const errorMessage =
         err instanceof Error
