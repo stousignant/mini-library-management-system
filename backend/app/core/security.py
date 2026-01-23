@@ -144,7 +144,7 @@ def decode_jwt_token(token: str) -> dict:
                 audience=JWT_AUDIENCE_AUTHENTICATED,
                 options={"verify_aud": True},
             )
-            logger.info(f"JWT verified (HS256/test) for user: {payload.get('email')}")
+            logger.info(f"JWT verified (HS256/test) for user_id: {payload.get('sub')}")
             return payload
         except JWTError as e:
             logger.error(f"JWT verification failed: {type(e).__name__}: {str(e)}")
@@ -160,7 +160,7 @@ def decode_jwt_token(token: str) -> dict:
             audience=JWT_AUDIENCE_AUTHENTICATED,
             options={"verify_aud": True},
         )
-        logger.info(f"JWT verified (ES256) for user: {payload.get('email')}")
+        logger.info(f"JWT verified (ES256) for user_id: {payload.get('sub')}")
         return payload
     except HTTPException:
         raise
