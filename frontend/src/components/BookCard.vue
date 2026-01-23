@@ -149,6 +149,7 @@ function handleImageError(event: globalThis.Event) {
 
       <div class="mt-auto pt-3 border-t border-gray-100 space-y-2">
         <button
+          v-if="authStore.isAuthenticated"
           :class="getButtonClass(book.status)"
           class="w-full text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
           data-testid="toggle-status-btn"
