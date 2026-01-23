@@ -4,11 +4,55 @@ Integration tests for Book CRUD endpoints.
 Tests the /books/ API endpoints with real database interactions.
 """
 
+import uuid
+from datetime import datetime, timedelta, timezone
+
 import pytest
+from jose import jwt
+
+from app.core.config import get_settings
+from app.core.constants import JWT_ALGORITHM, JWT_AUDIENCE_AUTHENTICATED
+from app.models.enums import UserRole
+from app.models.profile import Profile
+
+settings = get_settings()
+
+
+def create_test_token(user_id: str, email: str) -> str:
+    """Create test JWT token."""
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "aud": JWT_AUDIENCE_AUTHENTICATED,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, settings.supabase_jwt_secret, algorithm=JWT_ALGORITHM)
+
+
+@pytest.fixture
+async def admin_profile(async_session):
+    """Create admin user profile for tests."""
+    user_id = uuid.uuid4()
+    profile = Profile(
+        id=user_id,
+        email="admin@test.com",
+        role=UserRole.ADMIN,
+        created_at=datetime.now(timezone.utc),
+    )
+    async_session.add(profile)
+    await async_session.commit()
+    return profile
+
+
+@pytest.fixture
+def admin_token(admin_profile):
+    """Generate token for admin user."""
+    return create_test_token(str(admin_profile.id), admin_profile.email)
 
 
 @pytest.mark.asyncio
-async def test_create_book(client):
+async def test_create_book(client, admin_token):
     """
     Test creating a new book via POST /books/.
 
@@ -25,7 +69,7 @@ async def test_create_book(client):
     }
 
     # Act
-    response = await client.post("/books/", json=payload)
+    response = await client.post("/books/", json=payload, headers={"Authorization": f"Bearer {admin_token}"})
 
     # Assert
     assert response.status_code == 201
@@ -41,7 +85,7 @@ async def test_create_book(client):
 
 
 @pytest.mark.asyncio
-async def test_get_book_by_id(client):
+async def test_get_book_by_id(client, admin_token):
     """
     Test retrieving a single book by ID via GET /books/{id}.
 
@@ -56,7 +100,9 @@ async def test_get_book_by_id(client):
         "author": "Robert C. Martin",
         "isbn": "978-0132350884",
     }
-    create_response = await client.post("/books/", json=create_payload)
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
     created_book = create_response.json()
     book_id = created_book["id"]
 
@@ -75,7 +121,7 @@ async def test_get_book_by_id(client):
 
 
 @pytest.mark.asyncio
-async def test_list_all_books(client):
+async def test_list_all_books(client, admin_token):
     """
     Test retrieving all books via GET /books/.
 
@@ -92,7 +138,7 @@ async def test_list_all_books(client):
     ]
 
     for book_data in books_data:
-        await client.post("/books/", json=book_data)
+        await client.post("/books/", json=book_data, headers={"Authorization": f"Bearer {admin_token}"})
 
     # Act
     response = await client.get("/books/")
@@ -108,7 +154,7 @@ async def test_list_all_books(client):
 
 
 @pytest.mark.asyncio
-async def test_update_book(client):
+async def test_update_book(client, admin_token):
     """
     Test updating a book via PUT /books/{id}.
 
@@ -123,7 +169,9 @@ async def test_update_book(client):
         "author": "Original Author",
         "isbn": "978-0000000000",
     }
-    create_response = await client.post("/books/", json=create_payload)
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
     created_book = create_response.json()
     book_id = created_book["id"]
 
@@ -133,7 +181,9 @@ async def test_update_book(client):
         "author": "Updated Author",
         "isbn": "978-1111111111",
     }
-    response = await client.put(f"/books/{book_id}", json=update_payload)
+    response = await client.put(
+        f"/books/{book_id}", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
 
     # Assert
     assert response.status_code == 200
@@ -147,7 +197,7 @@ async def test_update_book(client):
 
 
 @pytest.mark.asyncio
-async def test_update_book_status(client):
+async def test_update_book_status(client, admin_token):
     """
     Test updating a book's status via PUT /books/{id}.
 
@@ -162,14 +212,18 @@ async def test_update_book_status(client):
         "author": "Test Author",
         "isbn": "978-0000000000",
     }
-    create_response = await client.post("/books/", json=create_payload)
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
     created_book = create_response.json()
     book_id = created_book["id"]
     assert created_book["status"] == "AVAILABLE"
 
     # Act - Update status to BORROWED
     update_payload = {"status": "BORROWED"}
-    response = await client.put(f"/books/{book_id}", json=update_payload)
+    response = await client.put(
+        f"/books/{book_id}", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
 
     # Assert
     assert response.status_code == 200
@@ -181,7 +235,9 @@ async def test_update_book_status(client):
 
     # Act - Update status back to AVAILABLE
     update_payload = {"status": "AVAILABLE"}
-    response = await client.put(f"/books/{book_id}", json=update_payload)
+    response = await client.put(
+        f"/books/{book_id}", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
 
     # Assert
     assert response.status_code == 200
@@ -190,7 +246,7 @@ async def test_update_book_status(client):
 
 
 @pytest.mark.asyncio
-async def test_create_book_with_cover_and_summary(client):
+async def test_create_book_with_cover_and_summary(client, admin_token):
     """
     Test creating a book with cover_image and summary fields.
 
@@ -209,7 +265,7 @@ async def test_create_book_with_cover_and_summary(client):
     }
 
     # Act
-    response = await client.post("/books/", json=payload)
+    response = await client.post("/books/", json=payload, headers={"Authorization": f"Bearer {admin_token}"})
 
     # Assert
     assert response.status_code == 201
@@ -225,7 +281,7 @@ async def test_create_book_with_cover_and_summary(client):
 
 
 @pytest.mark.asyncio
-async def test_update_book_cover_and_summary(client):
+async def test_update_book_cover_and_summary(client, admin_token):
     """
     Test updating a book's cover_image and summary fields.
 
@@ -240,7 +296,9 @@ async def test_update_book_cover_and_summary(client):
         "author": "Test Author",
         "isbn": "978-0000000000",
     }
-    create_response = await client.post("/books/", json=create_payload)
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
     created_book = create_response.json()
     book_id = created_book["id"]
     assert created_book["cover_image"] is None
@@ -251,7 +309,9 @@ async def test_update_book_cover_and_summary(client):
         "cover_image": "https://example.com/cover.jpg",
         "summary": "Test summary information",
     }
-    response = await client.put(f"/books/{book_id}", json=update_payload)
+    response = await client.put(
+        f"/books/{book_id}", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
 
     # Assert
     assert response.status_code == 200
@@ -264,7 +324,7 @@ async def test_update_book_cover_and_summary(client):
 
 
 @pytest.mark.asyncio
-async def test_delete_book(client):
+async def test_delete_book(client, admin_token):
     """
     Test deleting a book via DELETE /books/{id}.
 
@@ -279,12 +339,14 @@ async def test_delete_book(client):
         "author": "Test Author",
         "isbn": "978-0000000000",
     }
-    create_response = await client.post("/books/", json=create_payload)
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
     created_book = create_response.json()
     book_id = created_book["id"]
 
     # Act - Delete the book
-    response = await client.delete(f"/books/{book_id}")
+    response = await client.delete(f"/books/{book_id}", headers={"Authorization": f"Bearer {admin_token}"})
 
     # Assert
     assert response.status_code == 204

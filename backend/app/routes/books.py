@@ -9,7 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import require_role
 from app.models.book import Book
+from app.models.enums import UserRole
+from app.models.profile import Profile
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
 from app.services import book_service
 
@@ -20,6 +23,7 @@ router = APIRouter(prefix="/books", tags=["books"])
 async def create_book(
     book_data: BookCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: Profile = Depends(require_role(UserRole.ADMIN)),
 ) -> Book:
     """
     Create a new book in the library.
@@ -82,6 +86,7 @@ async def update_book(
     book_id: int,
     book_data: BookUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: Profile = Depends(require_role(UserRole.ADMIN)),
 ) -> Book:
     """
     Update a book by its ID.
@@ -110,6 +115,7 @@ async def update_book(
 async def delete_book(
     book_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: Profile = Depends(require_role(UserRole.ADMIN)),
 ) -> None:
     """
     Delete a book by its ID.
