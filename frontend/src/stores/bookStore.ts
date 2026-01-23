@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import apiClient from '@/services/api'
+import { toast } from 'vue-sonner'
 
 export const useBookStore = defineStore('book', () => {
   const books = ref<Book[]>([])
@@ -48,9 +49,11 @@ export const useBookStore = defineStore('book', () => {
 
     try {
       await apiClient.patch(`/books/${bookId}/${endpoint}`)
+      toast.success(isBorrowing ? 'Book borrowed successfully!' : 'Book returned successfully!')
     } catch (_err) {
       book.status = originalStatus
       error.value = 'Failed to update book status'
+      toast.error('Failed to update book status')
     }
   }
 
@@ -65,8 +68,10 @@ export const useBookStore = defineStore('book', () => {
     try {
       const response = await apiClient.post<Book>('/books/', bookData)
       books.value.push(response.data)
+      toast.success('Book added successfully!')
     } catch (_err) {
       error.value = 'Failed to create book'
+      toast.error('Failed to create book')
       throw _err
     } finally {
       isLoading.value = false
@@ -85,8 +90,10 @@ export const useBookStore = defineStore('book', () => {
       if (index !== -1) {
         books.value[index] = response.data
       }
+      toast.success('Book updated successfully!')
     } catch (_err) {
       error.value = 'Failed to update book'
+      toast.error('Failed to update book')
       throw _err
     }
   }
@@ -97,8 +104,10 @@ export const useBookStore = defineStore('book', () => {
     try {
       await apiClient.delete(`/books/${bookId}`)
       books.value = books.value.filter(b => b.id !== bookId)
+      toast.success('Book deleted successfully!')
     } catch (_err) {
       error.value = 'Failed to delete book'
+      toast.error('Failed to delete book')
       throw _err
     }
   }

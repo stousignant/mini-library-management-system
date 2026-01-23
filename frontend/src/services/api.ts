@@ -32,4 +32,15 @@ apiClient.interceptors.request.use(async config => {
   return config
 })
 
+export interface BookStatistics {
+  total: number
+  available: number
+  borrowed: number
+}
+
+export const getBookStatistics = async (): Promise<BookStatistics> => {
+  const response = await apiClient.get<BookStatistics>('/books/stats')
+  return response.data
+}
+
 export default apiClient

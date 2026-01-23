@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { Book } from '@/types/Book'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 
 const props = defineProps<{
   isOpen: boolean
@@ -72,105 +84,107 @@ function handleClose() {
   resetForm()
   emit('close')
 }
+
+function handleOpenChange(open: boolean) {
+  if (!open) {
+    handleClose()
+  }
+}
 </script>
 
 <template>
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    @click.self="handleClose"
-  >
-    <div class="bg-white rounded-lg p-6 w-full max-w-md">
-      <h2 class="text-2xl font-bold mb-4">
-        {{ isEditMode ? 'Edit Book' : 'Add New Book' }}
-      </h2>
+  <Dialog :open="isOpen" @update:open="handleOpenChange">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>
+          {{ isEditMode ? 'Edit Book' : 'Add New Book' }}
+        </DialogTitle>
+        <DialogDescription>
+          {{ isEditMode ? 'Update the book information below.' : 'Fill in the details to add a new book to the library.' }}
+        </DialogDescription>
+      </DialogHeader>
 
       <form @submit.prevent="handleSubmit">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Title <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="title"
-            type="text"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            data-testid="title-input"
-          />
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <Label for="title">
+              Title <span class="text-destructive">*</span>
+            </Label>
+            <Input
+              id="title"
+              v-model="title"
+              type="text"
+              required
+              data-testid="title-input"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="author">
+              Author <span class="text-destructive">*</span>
+            </Label>
+            <Input
+              id="author"
+              v-model="author"
+              type="text"
+              required
+              data-testid="author-input"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="isbn">ISBN</Label>
+            <Input
+              id="isbn"
+              v-model="isbn"
+              type="text"
+              :disabled="isEditMode"
+              data-testid="isbn-input"
+            />
+            <p v-if="isEditMode" class="text-xs text-muted-foreground">
+              ISBN cannot be changed after creation
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="coverImage">Cover Image URL</Label>
+            <Input
+              id="coverImage"
+              v-model="coverImage"
+              type="url"
+              placeholder="https://example.com/cover.jpg"
+              data-testid="cover-image-input"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="summary">Summary</Label>
+            <Textarea
+              id="summary"
+              v-model="summary"
+              rows="3"
+              placeholder="Brief description or publisher information"
+              data-testid="summary-input"
+            />
+          </div>
         </div>
 
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Author <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="author"
-            type="text"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            data-testid="author-input"
-          />
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            ISBN
-          </label>
-          <input
-            v-model="isbn"
-            type="text"
-            :disabled="isEditMode"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            data-testid="isbn-input"
-          />
-          <p v-if="isEditMode" class="text-xs text-gray-500 mt-1">
-            ISBN cannot be changed after creation
-          </p>
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Cover Image URL
-          </label>
-          <input
-            v-model="coverImage"
-            type="url"
-            placeholder="https://example.com/cover.jpg"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            data-testid="cover-image-input"
-          />
-        </div>
-
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Summary
-          </label>
-          <textarea
-            v-model="summary"
-            rows="3"
-            placeholder="Brief description or publisher information"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            data-testid="summary-input"
-          />
-        </div>
-
-        <div class="flex gap-3">
-          <button
+        <DialogFooter class="mt-6">
+          <Button
             type="button"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            variant="outline"
             @click="handleClose"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             data-testid="submit-btn"
           >
             {{ isEditMode ? 'Save Changes' : 'Add Book' }}
-          </button>
-        </div>
+          </Button>
+        </DialogFooter>
       </form>
-    </div>
-  </div>
+    </DialogContent>
+  </Dialog>
 </template>

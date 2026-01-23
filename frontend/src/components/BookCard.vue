@@ -3,6 +3,15 @@ import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import { useBookStore } from '@/stores/bookStore'
 import { useAuthStore } from '@/stores/authStore'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { User, BookOpen, Clock } from 'lucide-vue-next'
 
 const props = defineProps<{
   book: Book
@@ -16,16 +25,12 @@ const emit = defineEmits<{
 const bookStore = useBookStore()
 const authStore = useAuthStore()
 
-const getStatusColor = (status: BookStatus) => {
-  return status === BookStatus.Available
-    ? 'bg-green-100 text-green-800'
-    : 'bg-yellow-100 text-yellow-800'
+const getStatusVariant = (status: BookStatus) => {
+  return status === BookStatus.Available ? 'default' : 'secondary'
 }
 
-const getButtonClass = (status: BookStatus) => {
-  return status === BookStatus.Available
-    ? 'bg-green-600 hover:bg-green-700'
-    : 'bg-orange-600 hover:bg-orange-700'
+const getButtonVariant = (status: BookStatus) => {
+  return status === BookStatus.Available ? 'default' : 'secondary'
 }
 
 const getButtonLabel = (status: BookStatus) => {
@@ -47,11 +52,11 @@ function handleImageError(event: globalThis.Event) {
 </script>
 
 <template>
-  <div
+  <Card
     :data-testid="`book-item-${book.id}`"
-    class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200 flex flex-col h-full"
+    class="flex flex-col h-full"
   >
-    <div class="relative w-full h-64 bg-gray-100">
+    <div class="relative w-full h-64 bg-muted">
       <div
         v-if="book.cover_image"
         class="w-full h-full flex items-center justify-center overflow-hidden"
@@ -65,116 +70,82 @@ function handleImageError(event: globalThis.Event) {
       </div>
       <div
         v-else
-        class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"
+        class="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center"
       >
-        <svg
-          class="w-16 h-16 text-gray-400"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <BookOpen class="w-16 h-16 text-muted-foreground" />
       </div>
-      <span
-        :class="getStatusColor(book.status)"
-        class="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-semibold shadow-md"
+      <Badge
+        :variant="getStatusVariant(book.status)"
+        class="absolute top-2 right-2 shadow-md"
       >
         {{ book.status }}
-      </span>
+      </Badge>
     </div>
 
-    <div class="p-4 flex flex-col flex-1">
+    <CardHeader>
       <h3
-        class="text-lg font-bold text-gray-900 mb-3 line-clamp-2"
+        class="text-lg font-bold text-foreground line-clamp-2"
         :title="book.title"
       >
         {{ book.title }}
       </h3>
+    </CardHeader>
 
-      <div class="space-y-2 text-sm text-gray-600">
-        <div class="flex items-center">
-          <svg
-            class="w-4 h-4 mr-2 text-gray-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <span class="font-medium">{{ book.author }}</span>
-        </div>
-
-        <div class="flex items-center">
-          <svg
-            class="w-4 h-4 mr-2 text-gray-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <span>{{ book.isbn || 'No ISBN' }}</span>
-        </div>
-
-        <div
-          v-if="book.summary"
-          class="pt-2 text-gray-700 text-sm italic border-t border-gray-100"
-        >
-          {{ book.summary }}
-        </div>
-
-        <div
-          class="flex items-center text-xs text-gray-400 pt-2 border-t border-gray-100"
-        >
-          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Added {{ new Date(book.created_at).toLocaleDateString() }}
-        </div>
+    <CardContent class="flex-1 space-y-2">
+      <div class="flex items-center text-sm text-muted-foreground">
+        <User class="w-4 h-4 mr-2" />
+        <span class="font-medium">{{ book.author }}</span>
       </div>
 
-      <div class="mt-auto pt-3 border-t border-gray-100 space-y-2">
-        <button
-          v-if="authStore.isAuthenticated"
-          :class="getButtonClass(book.status)"
-          class="w-full text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-          data-testid="toggle-status-btn"
-          @click="bookStore.toggleStatus(book.id)"
-        >
-          {{ getButtonLabel(book.status) }}
-        </button>
-
-        <div v-if="authStore.isAdmin" class="flex gap-2">
-          <button
-            class="flex-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
-            data-testid="edit-btn"
-            @click="emit('edit', book)"
-          >
-            Edit
-          </button>
-          <button
-            class="flex-1 px-3 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
-            data-testid="delete-btn"
-            @click="handleDelete"
-          >
-            Delete
-          </button>
-        </div>
+      <div class="flex items-center text-sm text-muted-foreground">
+        <BookOpen class="w-4 h-4 mr-2" />
+        <span>{{ book.isbn || 'No ISBN' }}</span>
       </div>
-    </div>
-  </div>
+
+      <div
+        v-if="book.summary"
+        class="pt-2 text-sm text-muted-foreground italic border-t"
+      >
+        {{ book.summary }}
+      </div>
+
+      <div
+        class="flex items-center text-xs text-muted-foreground pt-2 border-t"
+      >
+        <Clock class="w-4 h-4 mr-1" />
+        Added {{ new Date(book.created_at).toLocaleDateString() }}
+      </div>
+    </CardContent>
+
+    <CardFooter class="flex-col gap-2">
+      <Button
+        v-if="authStore.isAuthenticated"
+        :variant="getButtonVariant(book.status)"
+        class="w-full"
+        data-testid="toggle-status-btn"
+        @click="bookStore.toggleStatus(book.id)"
+      >
+        {{ getButtonLabel(book.status) }}
+      </Button>
+
+      <div v-if="authStore.isAdmin" class="flex w-full gap-2">
+        <Button
+          variant="outline"
+          class="flex-1"
+          data-testid="edit-btn"
+          @click="emit('edit', book)"
+        >
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          class="flex-1 text-destructive hover:text-destructive"
+          data-testid="delete-btn"
+          @click="handleDelete"
+        >
+          Delete
+        </Button>
+      </div>
+    </CardFooter>
+  </Card>
 </template>
