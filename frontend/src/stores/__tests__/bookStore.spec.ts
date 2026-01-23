@@ -23,6 +23,7 @@ describe('bookStore', () => {
         cover_image: null,
         summary: null,
         status: BookStatus.Available,
+        borrowed_by: null,
         created_at: '2024-01-01T00:00:00Z',
       },
       {
@@ -33,6 +34,7 @@ describe('bookStore', () => {
         cover_image: null,
         summary: null,
         status: BookStatus.Borrowed,
+        borrowed_by: null,
         created_at: '2024-01-02T00:00:00Z',
       },
     ]
@@ -92,6 +94,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
         {
@@ -102,6 +105,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-02T00:00:00Z',
         },
         {
@@ -112,6 +116,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-03T00:00:00Z',
         },
       ]
@@ -133,6 +138,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
         {
@@ -143,6 +149,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-02T00:00:00Z',
         },
       ]
@@ -164,6 +171,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
         {
@@ -174,6 +182,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-02T00:00:00Z',
         },
       ]
@@ -195,6 +204,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
         {
@@ -205,6 +215,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-02T00:00:00Z',
         },
       ]
@@ -336,6 +347,7 @@ describe('bookStore', () => {
         cover_image: null,
         summary: null,
         status: BookStatus.Available,
+        borrowed_by: null,
         created_at: '2024-01-01T00:00:00Z',
       }
 
@@ -387,6 +399,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
       ]
@@ -399,6 +412,7 @@ describe('bookStore', () => {
         cover_image: null,
         summary: null,
         status: BookStatus.Available,
+        borrowed_by: null,
         created_at: '2024-01-01T00:00:00Z',
       }
 
@@ -425,6 +439,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
       ]
@@ -450,6 +465,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
         {
@@ -460,6 +476,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-02T00:00:00Z',
         },
       ]
@@ -486,6 +503,7 @@ describe('bookStore', () => {
           cover_image: null,
           summary: null,
           status: BookStatus.Available,
+          borrowed_by: null,
           created_at: '2024-01-01T00:00:00Z',
         },
       ]
