@@ -42,19 +42,18 @@ describe('AuthButton', () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
 
-    authStore.session = {
-      access_token: 'test-token',
-      user: {
-        id: '123',
-        email: 'test@example.com',
-        app_metadata: { role: 'MEMBER' },
-      } as unknown as User,
-    } as Session
-    authStore.user = {
+    const mockUser: Partial<User> = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as unknown as User
+    }
+    const mockSession: Partial<Session> = {
+      access_token: 'test-token',
+      user: mockUser as User,
+    }
+
+    authStore.session = mockSession as Session
+    authStore.user = mockUser as User
     authStore.userRole = 'MEMBER'
 
     await wrapper.vm.$nextTick()
@@ -68,19 +67,18 @@ describe('AuthButton', () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
 
-    authStore.session = {
-      access_token: 'test-token',
-      user: {
-        id: '123',
-        email: 'admin@example.com',
-        app_metadata: { role: 'ADMIN' },
-      } as unknown as User,
-    } as Session
-    authStore.user = {
+    const mockUser: Partial<User> = {
       id: '123',
       email: 'admin@example.com',
       app_metadata: { role: 'ADMIN' },
-    } as unknown as User
+    }
+    const mockSession: Partial<Session> = {
+      access_token: 'test-token',
+      user: mockUser as User,
+    }
+
+    authStore.session = mockSession as Session
+    authStore.user = mockUser as User
     authStore.userRole = 'ADMIN'
 
     await wrapper.vm.$nextTick()
@@ -121,19 +119,18 @@ describe('AuthButton', () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
 
-    authStore.session = {
-      access_token: 'test-token',
-      user: {
-        id: '123',
-        email: 'test@example.com',
-        app_metadata: { role: 'MEMBER' },
-      } as unknown as User,
-    } as Session
-    authStore.user = {
+    const mockUser: Partial<User> = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as unknown as User
+    }
+    const mockSession: Partial<Session> = {
+      access_token: 'test-token',
+      user: mockUser as User,
+    }
+
+    authStore.session = mockSession as Session
+    authStore.user = mockUser as User
 
     await wrapper.vm.$nextTick()
 
