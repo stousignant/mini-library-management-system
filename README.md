@@ -8,7 +8,7 @@ A modern, full-stack library management system built with FastAPI and Vue 3, fol
 
 This project implements a comprehensive library management system that goes beyond basic CRUD operations. It features user authentication, role-based access control, real-time statistics, advanced filtering, and a modern responsive UI—all built using TDD principles.
 
-## Built with AI Assistance (15 hours)
+## The Challenge (<2 days)
 
 This project was developed in approximately 15 hours using AI coding assistants (Claude Sonnet 4.5 via Cursor), demonstrating how modern AI tools can accelerate development while maintaining professional standards. The AI served as a collaborative pair programmer, helping with:
 
