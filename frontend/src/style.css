@@ -1,3 +1,280 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Toast container positioning - fixed at bottom right */
+[data-sonner-toaster] {
+  position: fixed !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  margin: 1.5rem !important;
+  pointer-events: none;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  align-items: flex-end !important;
+}
+
+[data-sonner-toaster] > * {
+  pointer-events: auto;
+}
+
+/* Toast styling - beautiful and modern */
+[data-sonner-toast] {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  padding-right: 40px !important;
+  min-width: 320px;
+  max-width: 420px;
+  backdrop-filter: blur(10px);
+  border: 1px solid hsl(var(--border) / 0.3) !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  animation: slide-in-bottom-right 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  transition:
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease !important;
+  pointer-events: none !important;
+}
+
+/* Exit animation when toast is removed */
+[data-sonner-toast][data-removed='true'] {
+  animation: slide-out-bottom-right 1.8s cubic-bezier(0.2, 0, 0.1, 1) forwards !important;
+}
+
+[data-sonner-toast][data-swiping='true'] {
+  animation: slide-out-bottom-right 1.8s cubic-bezier(0.2, 0, 0.1, 1) forwards !important;
+}
+
+/* Success toast styling */
+[data-sonner-toast][data-type='success'] {
+  background: linear-gradient(
+    135deg,
+    hsl(142.1 76.2% 36.3% / 0.95) 0%,
+    hsl(142.1 70% 42% / 0.95) 100%
+  ) !important;
+  color: white !important;
+  border-color: hsl(142.1 76.2% 28.3% / 0.4) !important;
+}
+
+[data-sonner-toast][data-type='success'] [data-content] {
+  color: white !important;
+  font-weight: 500;
+}
+
+/* Error toast styling */
+[data-sonner-toast][data-type='error'] {
+  background: linear-gradient(
+    135deg,
+    hsl(0 84.2% 60.2% / 0.95) 0%,
+    hsl(0 78% 65% / 0.95) 100%
+  ) !important;
+  color: white !important;
+  border-color: hsl(0 84.2% 50.2% / 0.4) !important;
+}
+
+[data-sonner-toast][data-type='error'] [data-content] {
+  color: white !important;
+  font-weight: 500;
+}
+
+/* Info toast styling */
+[data-sonner-toast][data-type='info'] {
+  background: linear-gradient(
+    135deg,
+    hsl(215 100% 60% / 0.95) 0%,
+    hsl(215 95% 65% / 0.95) 100%
+  ) !important;
+  color: white !important;
+  border-color: hsl(215 100% 50% / 0.4) !important;
+}
+
+/* Toast icon styling - align with text */
+[data-sonner-toast] [data-icon] {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Toast content - aligned with icon */
+[data-sonner-toast] [data-content] {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  line-height: 1.4 !important;
+}
+
+/* Close button styling - positioned at top right */
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 6px !important;
+  color: white !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1);
+}
+
+/* Progress bar styling */
+[data-sonner-toast]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  animation: toast-progress 4500ms linear forwards;
+  transform-origin: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Slide in animation */
+@keyframes slide-in-bottom-right {
+  0% {
+    transform: translateX(100%) translateY(20px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fade out animation - no movement, just fade */
+@keyframes slide-out-bottom-right {
+  0% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  20% {
+    opacity: 0.85;
+    filter: blur(0px);
+  }
+  40% {
+    opacity: 0.65;
+    filter: blur(0.3px);
+  }
+  60% {
+    opacity: 0.4;
+    filter: blur(0.5px);
+  }
+  80% {
+    opacity: 0.15;
+    filter: blur(0.7px);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(1px);
+  }
+}
+
+/* Progress bar animation */
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Dark mode adjustments */
+.dark [data-sonner-toast] {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+@layer base {
+  :root {
+    --background: 40 30% 95%;
+    --foreground: 30 20% 15%;
+    --card: 40 25% 98%;
+    --card-foreground: 30 20% 15%;
+    --popover: 40 25% 98%;
+    --popover-foreground: 30 20% 15%;
+    --primary: 30 35% 25%;
+    --primary-foreground: 40 30% 98%;
+    --secondary: 40 25% 90%;
+    --secondary-foreground: 30 20% 15%;
+    --muted: 40 20% 88%;
+    --muted-foreground: 30 15% 45%;
+    --accent: 35 40% 85%;
+    --accent-foreground: 30 25% 20%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 40 20% 85%;
+    --input: 40 20% 85%;
+    --ring: 30 35% 35%;
+    --chart-1: 25 75% 60%;
+    --chart-2: 40 70% 55%;
+    --chart-3: 35 65% 50%;
+    --chart-4: 45 80% 60%;
+    --chart-5: 30 85% 65%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

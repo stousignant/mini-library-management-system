@@ -1,18 +1,53 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useBookStore } from '@/stores/bookStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useStatsStore } from '@/stores/statsStore'
 import BookCard from './BookCard.vue'
 import BookFormModal from './BookFormModal.vue'
 import type { Book } from '@/types/Book'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  BookOpen,
+  CheckCircle,
+  Clock,
+  Search,
+  AlertCircle,
+  Loader2,
+  User,
+  SortAsc,
+  Filter,
+} from 'lucide-vue-next'
+import { Badge } from '@/components/ui/badge'
 
 const bookStore = useBookStore()
 const authStore = useAuthStore()
+const statsStore = useStatsStore()
 const isModalOpen = ref(false)
 const bookToEdit = ref<Book | undefined>(undefined)
 
+// Watch for auth user changes and update filterUserId
+watch(
+  () => authStore.user?.id,
+  newUserId => {
+    bookStore.filterUserId = newUserId || null
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
+  bookStore.filterUserId = authStore.user?.id || null
   bookStore.fetchBooks()
+  statsStore.fetchStatistics()
+  bookStore.startPolling()
+  statsStore.startPolling()
+})
+
+onUnmounted(() => {
+  bookStore.stopPolling()
+  statsStore.stopPolling()
 })
 
 function openAddModal() {
@@ -41,6 +76,7 @@ async function handleSubmit(data: {
     } else {
       await bookStore.addBook(data)
     }
+    await statsStore.fetchStatistics()
     closeModal()
   } catch (_err) {
     // Error already set in store
@@ -50,6 +86,7 @@ async function handleSubmit(data: {
 async function handleDelete(bookId: number) {
   try {
     await bookStore.deleteBook(bookId)
+    await statsStore.fetchStatistics()
   } catch (_err) {
     // Error already set in store
   }
@@ -57,75 +94,170 @@ async function handleDelete(bookId: number) {
 </script>
 
 <template>
-  <div class="book-list">
+  <div class="book-list space-y-6">
+    <!-- Stats Dashboard -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
+          <CardTitle class="text-sm font-medium">Total Books</CardTitle>
+          <BookOpen class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ statsStore.total }}</div>
+          <p class="text-xs text-muted-foreground">Books in the library</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
+          <CardTitle class="text-sm font-medium">Available</CardTitle>
+          <CheckCircle class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ statsStore.available }}</div>
+          <p class="text-xs text-muted-foreground">Ready to borrow</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
+          <CardTitle class="text-sm font-medium">Borrowed</CardTitle>
+          <Clock class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ statsStore.borrowed }}</div>
+          <p class="text-xs text-muted-foreground">Currently out</p>
+        </CardContent>
+      </Card>
+    </div>
+
+    <!-- Filters and Sorting -->
+    <div
+      class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
+    >
+      <!-- Left side: Filters (only when authenticated) -->
+      <div class="flex gap-2">
+        <template v-if="authStore.isAuthenticated">
+          <Button
+            :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
+            class="gap-2"
+            @click="
+              () => {
+                bookStore.filterUserId = authStore.user?.id || null
+                bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
+              }
+            "
+          >
+            <User class="h-4 w-4" />
+            <span>My Books</span>
+            <Badge
+              :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
+              class="ml-1"
+            >
+              {{ bookStore.myBorrowedCount }}
+            </Badge>
+          </Button>
+
+          <Button
+            :variant="bookStore.showAvailableOnly ? 'default' : 'outline'"
+            class="gap-2"
+            @click="bookStore.showAvailableOnly = !bookStore.showAvailableOnly"
+          >
+            <Filter class="h-4 w-4" />
+            <span>Available Only</span>
+          </Button>
+        </template>
+      </div>
+
+      <!-- Right side: Sorting (always visible) -->
+      <div class="flex items-center gap-2 ml-auto">
+        <SortAsc class="h-4 w-4 text-muted-foreground" />
+        <span class="text-sm text-muted-foreground">Sort by:</span>
+        <div class="flex gap-1">
+          <Button
+            :variant="bookStore.sortBy === 'none' ? 'default' : 'outline'"
+            size="sm"
+            @click="bookStore.sortBy = 'none'"
+          >
+            Default
+          </Button>
+          <Button
+            :variant="bookStore.sortBy === 'title' ? 'default' : 'outline'"
+            size="sm"
+            @click="bookStore.sortBy = 'title'"
+          >
+            Title
+          </Button>
+          <Button
+            :variant="bookStore.sortBy === 'date' ? 'default' : 'outline'"
+            size="sm"
+            @click="bookStore.sortBy = 'date'"
+          >
+            Date Added
+          </Button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
     <div
       v-if="bookStore.isLoading"
       data-testid="loading-state"
       class="flex items-center justify-center py-12"
     >
       <div class="text-center">
-        <div
-          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"
-        ></div>
-        <p class="text-gray-600">Loading books...</p>
+        <Loader2
+          class="inline-block h-12 w-12 animate-spin text-muted-foreground mb-4"
+        />
+        <p class="text-muted-foreground">Loading books...</p>
       </div>
     </div>
 
+    <!-- Error State -->
     <div
       v-else-if="bookStore.error"
       data-testid="error-state"
-      class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800"
+      class="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive"
     >
-      <svg
-        class="inline-block w-5 h-5 mr-2"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-          clip-rule="evenodd"
-        />
-      </svg>
+      <AlertCircle class="inline-block w-5 h-5 mr-2" />
       {{ bookStore.error }}
     </div>
 
-    <div v-else data-testid="book-list">
-      <div class="mb-6 flex gap-4">
-        <input
-          v-model="bookStore.searchQuery"
-          type="text"
-          placeholder="Search by title or author..."
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          data-testid="search-input"
-        />
-        <button
+    <!-- Book List -->
+    <div v-else data-testid="book-list" class="space-y-6">
+      <div class="flex gap-4">
+        <div class="relative flex-1">
+          <Search
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          />
+          <Input
+            v-model="bookStore.searchQuery"
+            type="text"
+            placeholder="Search by title or author..."
+            class="pl-10"
+            data-testid="search-input"
+          />
+        </div>
+        <Button
           v-if="authStore.isAdmin"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
           data-testid="add-book-btn"
           @click="openAddModal"
         >
           Add Book
-        </button>
+        </Button>
       </div>
 
       <div
         v-if="bookStore.filteredBooks.length === 0"
-        class="text-center py-12 text-gray-500"
+        class="text-center py-12 text-muted-foreground"
       >
-        <svg
-          class="mx-auto h-12 w-12 text-gray-400 mb-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-          />
-        </svg>
+        <BookOpen class="mx-auto h-12 w-12 mb-4 opacity-50" />
         <p class="text-lg font-medium">
           {{
             bookStore.searchQuery
@@ -144,6 +276,7 @@ async function handleDelete(bookId: number) {
 
       <div
         v-else
+        :key="`books-${bookStore.showAvailableOnly}-${bookStore.sortBy}-${bookStore.showMyBooksOnly}`"
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
       >
         <BookCard

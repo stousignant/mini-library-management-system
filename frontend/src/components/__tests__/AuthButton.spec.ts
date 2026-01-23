@@ -33,9 +33,9 @@ describe('AuthButton', () => {
   it('shows sign in button when not authenticated', () => {
     const wrapper = mount(AuthButton)
 
-    expect(wrapper.text()).toContain('Sign in with GitHub')
-    expect(wrapper.text()).toContain('Sign in with Google')
-    expect(wrapper.findAll('button').length).toBeGreaterThanOrEqual(2)
+    expect(wrapper.text()).toContain('Sign In')
+    const signInButton = wrapper.find('button')
+    expect(signInButton.exists()).toBe(true)
   })
 
   it('shows user info when authenticated', async () => {
@@ -84,37 +84,61 @@ describe('AuthButton', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Admin')
-    expect(wrapper.find('.bg-purple-600').exists()).toBe(true)
+    expect(wrapper.text()).toContain('admin@example.com')
   })
 
-  it('calls signInWithGithub when GitHub button clicked', async () => {
-    const wrapper = mount(AuthButton)
+  it('calls signInWithGithub when GitHub button clicked in dialog', async () => {
+    const wrapper = mount(AuthButton, {
+      attachTo: document.body,
+    })
     const authStore = useAuthStore()
     const signInSpy = vi
       .spyOn(authStore, 'signInWithGithub')
       .mockResolvedValue()
 
-    const buttons = wrapper.findAll('button')
-    const githubButton = buttons.find(b => b.text().includes('GitHub'))
+    const signInButton = wrapper.find('button')
+    await signInButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const githubButton = document.querySelector('button:has(svg)')
     expect(githubButton).toBeTruthy()
-    await githubButton!.trigger('click')
+    expect(githubButton?.textContent).toContain('GitHub')
+
+    await githubButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    )
+    await wrapper.vm.$nextTick()
 
     expect(signInSpy).toHaveBeenCalled()
+    wrapper.unmount()
   })
 
-  it('calls signInWithGoogle when Google button clicked', async () => {
-    const wrapper = mount(AuthButton)
+  it('calls signInWithGoogle when Google button clicked in dialog', async () => {
+    const wrapper = mount(AuthButton, {
+      attachTo: document.body,
+    })
     const authStore = useAuthStore()
     const signInSpy = vi
       .spyOn(authStore, 'signInWithGoogle')
       .mockResolvedValue()
 
-    const buttons = wrapper.findAll('button')
-    const googleButton = buttons.find(b => b.text().includes('Google'))
+    const signInButton = wrapper.find('button')
+    await signInButton.trigger('click')
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const googleButton = buttons.find(b => b.textContent?.includes('Google'))
     expect(googleButton).toBeTruthy()
-    await googleButton!.trigger('click')
+
+    await googleButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    )
+    await wrapper.vm.$nextTick()
 
     expect(signInSpy).toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('calls signOut when sign out button clicked', async () => {

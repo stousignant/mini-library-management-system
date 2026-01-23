@@ -39,6 +39,11 @@ export default [
         document: 'readonly',
         navigator: 'readonly',
         console: 'readonly',
+        localStorage: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        setTimeout: 'readonly',
+        MouseEvent: 'readonly',
       },
     },
     plugins: {

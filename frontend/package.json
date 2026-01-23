@@ -17,9 +17,17 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.0",
+    "@vueuse/core": "^14.1.0",
     "axios": "^1.6.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.563.0",
     "pinia": "^2.1.7",
-    "vue": "^3.4.0"
+    "reka-ui": "^2.7.0",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vue": "^3.4.0",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

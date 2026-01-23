@@ -55,3 +55,11 @@ class BookResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BookStatistics(BaseModel):
+    """Schema for book statistics."""
+
+    total: int = Field(..., ge=0, description="Total number of books")
+    available: int = Field(..., ge=0, description="Number of available books")
+    borrowed: int = Field(..., ge=0, description="Number of borrowed books")
