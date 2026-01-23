@@ -3,6 +3,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import BookList from '../BookList.vue'
 import { useBookStore } from '@/stores/bookStore'
+import { useStatsStore } from '@/stores/statsStore'
 import { BookStatus } from '@/types/Book'
 
 describe('BookList', () => {
@@ -22,6 +23,13 @@ describe('BookList', () => {
                 books: [],
                 error: null,
               },
+              stats: {
+                total: 0,
+                available: 0,
+                borrowed: 0,
+                isLoading: false,
+                error: null,
+              },
             },
           }),
         ],
@@ -32,7 +40,7 @@ describe('BookList', () => {
     expect(wrapper.find('[data-testid="book-list"]').exists()).toBe(false)
   })
 
-  it('fetches books on mount', () => {
+  it('fetches books and stats on mount', () => {
     mount(BookList, {
       global: {
         plugins: [
@@ -43,9 +51,11 @@ describe('BookList', () => {
       },
     })
 
-    const store = useBookStore()
+    const bookStore = useBookStore()
+    const statsStore = useStatsStore()
 
-    expect(store.fetchBooks).toHaveBeenCalledOnce()
+    expect(bookStore.fetchBooks).toHaveBeenCalledOnce()
+    expect(statsStore.fetchStatistics).toHaveBeenCalledOnce()
   })
 
   it('renders book list when books are loaded', () => {
@@ -79,6 +89,13 @@ describe('BookList', () => {
                 books: mockBooks,
                 error: null,
               },
+              stats: {
+                total: 2,
+                available: 1,
+                borrowed: 1,
+                isLoading: false,
+                error: null,
+              },
             },
           }),
         ],
@@ -109,6 +126,13 @@ describe('BookList', () => {
                 books: [],
                 error: 'Failed to fetch books',
               },
+              stats: {
+                total: 0,
+                available: 0,
+                borrowed: 0,
+                isLoading: false,
+                error: null,
+              },
             },
           }),
         ],
@@ -131,6 +155,13 @@ describe('BookList', () => {
                 books: [],
                 error: null,
               },
+              stats: {
+                total: 0,
+                available: 0,
+                borrowed: 0,
+                isLoading: false,
+                error: null,
+              },
             },
           }),
         ],
@@ -139,5 +170,38 @@ describe('BookList', () => {
 
     expect(wrapper.find('[data-testid="book-list"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid^="book-item-"]')).toHaveLength(0)
+  })
+
+  it('displays stats dashboard with correct values', () => {
+    const wrapper = mount(BookList, {
+      global: {
+        plugins: [
+          createTestingPinia({
+            createSpy: vi.fn,
+            initialState: {
+              book: {
+                isLoading: false,
+                books: [],
+                error: null,
+              },
+              stats: {
+                total: 10,
+                available: 7,
+                borrowed: 3,
+                isLoading: false,
+                error: null,
+              },
+            },
+          }),
+        ],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Total Books')
+    expect(wrapper.text()).toContain('10')
+    expect(wrapper.text()).toContain('Available')
+    expect(wrapper.text()).toContain('7')
+    expect(wrapper.text()).toContain('Borrowed')
+    expect(wrapper.text()).toContain('3')
   })
 })

@@ -84,7 +84,7 @@ describe('AuthButton', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Admin')
-    expect(wrapper.find('.bg-purple-600').exists()).toBe(true)
+    expect(wrapper.text()).toContain('admin@example.com')
   })
 
   it('calls signInWithGithub when GitHub button clicked', async () => {
