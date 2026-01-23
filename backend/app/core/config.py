@@ -109,11 +109,22 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Get application settings instance with caching to avoid multiple loads."""
+    print("=" * 80)
+    print(f"DEBUG: Loading settings from environment: ENVIRONMENT={os.getenv('ENVIRONMENT')}")
+    print(f"DEBUG: SUPABASE_URL from os.getenv: {os.getenv('SUPABASE_URL', 'NOT SET')}")
+    print(f"DEBUG: SUPABASE_JWT_SECRET from os.getenv: {'SET' if os.getenv('SUPABASE_JWT_SECRET') else 'NOT SET'}")
+    print("=" * 80)
+
     logger.info(f"Loading settings from environment: ENVIRONMENT={os.getenv('ENVIRONMENT')}")
     logger.info(f"SUPABASE_URL from os.getenv: {os.getenv('SUPABASE_URL', 'NOT SET')}")
     logger.info(f"SUPABASE_JWT_SECRET from os.getenv: {'SET' if os.getenv('SUPABASE_JWT_SECRET') else 'NOT SET'}")
 
     settings = Settings()
+
+    print(f"DEBUG: Settings loaded - supabase_url: {settings.supabase_url if settings.supabase_url else 'NOT SET'}")
+    print(f"DEBUG: Settings loaded - environment: {settings.environment}")
+    print("=" * 80)
+
     logger.info(f"Settings loaded - supabase_url: {settings.supabase_url if settings.supabase_url else 'NOT SET'}")
     logger.info(f"Settings loaded - environment: {settings.environment}")
 

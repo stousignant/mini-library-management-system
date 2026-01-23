@@ -21,6 +21,18 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 db_url = make_url(settings.database_url)
+
+print("\n" + "=" * 80)
+print("APPLICATION STARTUP - Settings Check")
+print("=" * 80)
+print(f"Environment: {settings.environment}")
+print(f"Database host: {db_url.host}")
+print(f"Database port: {db_url.port}")
+print(f"Database name: {db_url.database}")
+print(f"Supabase URL configured: {settings.supabase_url is not None}")
+print(f"Supabase URL value: {settings.supabase_url if settings.supabase_url else 'NOT SET'}")
+print("=" * 80 + "\n")
+
 logger.info(f"Environment: {settings.environment}")
 logger.info(f"Database host: {db_url.host}")
 logger.info(f"Database port: {db_url.port}")
