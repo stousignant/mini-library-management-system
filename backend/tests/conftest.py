@@ -5,6 +5,8 @@ Provides shared fixtures for database connections, test clients,
 and other testing utilities.
 """
 
+import os
+
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
@@ -19,6 +21,14 @@ from app.core.constants import DB_TEST_CONNECT_ARGS
 from app.core.database import get_db
 from app.main import app
 from app.models import Base
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_test_environment():
+    """Ensure ENVIRONMENT is set to 'test' for all tests."""
+    os.environ["ENVIRONMENT"] = "test"
+    yield
+    os.environ.pop("ENVIRONMENT", None)
 
 
 @pytest.fixture(scope="session")

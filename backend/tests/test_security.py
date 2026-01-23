@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.core.constants import (
     ERROR_INSUFFICIENT_PERMISSIONS,
     ERROR_INVALID_TOKEN,
-    ERROR_USER_NOT_FOUND,
     JWT_ALGORITHM,
     JWT_AUDIENCE_AUTHENTICATED,
 )
@@ -157,15 +156,17 @@ class TestGetCurrentUserWithRole:
         assert result.role == UserRole.ADMIN
 
     async def test_get_user_with_role_profile_not_found(self, async_session):
-        """Should raise HTTPException when profile not found."""
-        user_id = str(uuid.uuid4())
-        user_payload = {"sub": user_id, "email": "notfound@example.com", "aud": JWT_AUDIENCE_AUTHENTICATED}
+        """Should auto-create profile with MEMBER role when profile not found."""
+        user_id = uuid.uuid4()
+        email = "newuser@example.com"
+        user_payload = {"sub": str(user_id), "email": email, "aud": JWT_AUDIENCE_AUTHENTICATED}
 
-        with pytest.raises(HTTPException) as exc_info:
-            await get_current_user_with_role(user_payload, async_session)
+        result = await get_current_user_with_role(user_payload, async_session)
 
-        assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == ERROR_USER_NOT_FOUND
+        assert result is not None
+        assert result.id == user_id
+        assert result.email == email
+        assert result.role == UserRole.MEMBER
 
 
 class TestRequireRole:
