@@ -199,7 +199,8 @@ async def return_book(
         HTTPException: 400 if book is not borrowed or user is not the borrower
     """
     try:
-        book = await book_service.return_book(db, book_id, current_user.id)
+        user_id_to_check = None if current_user.role == UserRole.ADMIN else current_user.id
+        book = await book_service.return_book(db, book_id, user_id_to_check)
         if book is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
