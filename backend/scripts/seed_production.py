@@ -14,7 +14,12 @@ from sqlalchemy import func, select
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.core.constants import OPEN_LIBRARY_API_BASE_URL, SEED_BOOK_ISBNS
+from app.core.constants import (
+    OPEN_LIBRARY_API_BASE_URL,
+    OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS,
+    OPEN_LIBRARY_REQUEST_TIMEOUT_SECONDS,
+    SEED_BOOK_ISBNS,
+)
 from app.core.database import AsyncSessionLocal
 from app.models.book import Book
 from app.models.enums import BookStatus
@@ -33,7 +38,7 @@ async def fetch_book_metadata(isbn: str) -> dict | None:
     url = f"{OPEN_LIBRARY_API_BASE_URL}/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=OPEN_LIBRARY_REQUEST_TIMEOUT_SECONDS) as client:
             response = await client.get(url)
             response.raise_for_status()
 
@@ -112,18 +117,22 @@ async def seed_production() -> None:
                 if book_data is None:
                     print(f"{progress} ⚠️  Failed to fetch: ISBN {isbn}")
                     failed_count += 1
+                    await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
                     continue
 
                 existing = await db.execute(select(Book).where(Book.isbn == book_data["isbn"]))
                 if existing.scalar_one_or_none():
                     print(f"{progress} ⏭️  Skipped: {book_data['title'][:40]}... (exists)")
                     skipped_count += 1
+                    await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
                     continue
 
                 book = Book(**book_data)
                 db.add(book)
                 print(f"{progress} ✅ Added: {book_data['title'][:50]} by {book_data['author'][:30]}")
                 created_count += 1
+
+                await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
 
                 if index % 10 == 0:
                     await db.commit()
