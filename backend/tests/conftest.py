@@ -10,7 +10,7 @@ import os
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault(
     "SUPABASE_JWT_SECRET",
-    "test-jwt-secret-for-testing-only-not-for-production-use",
+    "test-jwt-secret-for-local-development-and-ci-testing-minimum-32-chars",
 )
 
 import pytest

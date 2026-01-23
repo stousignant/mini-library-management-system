@@ -80,7 +80,7 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
         env:
-          ENVIRONMENT: local
+          ENVIRONMENT: test
           TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
           SUPABASE_JWT_SECRET: test-jwt-secret-for-local-development-and-ci-testing-minimum-32-chars
 
