@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.constants import (
     ERROR_INSUFFICIENT_PERMISSIONS,
     ERROR_INVALID_TOKEN,
+    SUPABASE_JWKS_PATH,
 )
 from app.core.database import get_db
 from app.models.enums import UserRole
@@ -29,7 +30,12 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = HTTPBearer()
 
-SUPABASE_JWKS_URL = "https://lmchwrrswvllapfhohnb.supabase.co/auth/v1/.well-known/jwks.json"
+
+def get_supabase_jwks_url() -> str:
+    """Get Supabase JWKS URL from settings."""
+    if not settings.supabase_url:
+        raise ValueError("SUPABASE_URL must be set in environment variables")
+    return f"{settings.supabase_url.rstrip('/')}{SUPABASE_JWKS_PATH}"
 
 
 @lru_cache(maxsize=1)
@@ -45,12 +51,13 @@ def get_supabase_jwks() -> dict:
     Raises:
         HTTPException: 500 if unable to fetch JWKS
     """
+    jwks_url = get_supabase_jwks_url()
     try:
-        response = httpx.get(SUPABASE_JWKS_URL, timeout=5.0)
+        response = httpx.get(jwks_url, timeout=5.0)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        logger.error(f"Failed to fetch JWKS from {SUPABASE_JWKS_URL}: {e}")
+        logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch authentication keys"
         )

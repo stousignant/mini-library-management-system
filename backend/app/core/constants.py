@@ -51,6 +51,7 @@ OPEN_LIBRARY_COVERS_BASE_URL = "https://covers.openlibrary.org"
 JWT_ALGORITHM = "HS256"
 JWT_AUDIENCE_AUTHENTICATED = "authenticated"
 JWT_TOKEN_TYPE_BEARER = "Bearer"
+SUPABASE_JWKS_PATH = "/auth/v1/.well-known/jwks.json"
 
 # Error Messages
 ERROR_INVALID_TOKEN = "Could not validate credentials"
