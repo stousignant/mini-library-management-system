@@ -15,7 +15,7 @@ from app.core.constants import (
     HEALTH_STATUS_HEALTHY,
     ROOT_MESSAGE,
 )
-from app.routes import books
+from app.routes import books, profile
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ else:
     )
 
 app.include_router(books.router)
+app.include_router(profile.router)
 
 
 @app.get("/")

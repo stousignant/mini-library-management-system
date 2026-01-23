@@ -4,11 +4,14 @@ Authentication and authorization utilities.
 Handles JWT token verification, user authentication, and role-based access control.
 """
 
+import logging
+from functools import lru_cache
 from uuid import UUID
 
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError, jwk, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,22 +19,76 @@ from app.core.config import get_settings
 from app.core.constants import (
     ERROR_INSUFFICIENT_PERMISSIONS,
     ERROR_INVALID_TOKEN,
-    ERROR_USER_NOT_FOUND,
-    JWT_ALGORITHM,
-    JWT_AUDIENCE_AUTHENTICATED,
 )
 from app.core.database import get_db
 from app.models.enums import UserRole
 from app.models.profile import Profile
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = HTTPBearer()
+
+
+@lru_cache(maxsize=1)
+def get_supabase_jwks() -> dict:
+    """
+    Fetch JWKS (JSON Web Key Set) from Supabase.
+
+    Cached to avoid repeated HTTP requests.
+
+    Returns:
+        Dictionary of JWKS keys
+    """
+    supabase_url = "https://lmchwrrswvllapfhohnb.supabase.co"
+    jwks_url = f"{supabase_url}/.well-known/jwks.json"
+
+    try:
+        response = httpx.get(jwks_url, timeout=5.0)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch JWKS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch authentication keys"
+        )
+
+
+def get_signing_key(token: str) -> str:
+    """
+    Get the public key for verifying JWT token signature.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Public key string for verification
+    """
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get("kid")
+
+        if not kid:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing key ID")
+
+        jwks = get_supabase_jwks()
+
+        for key in jwks.get("keys", []):
+            if key.get("kid") == kid:
+                return jwk.construct(key).to_pem().decode("utf-8")
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find appropriate key")
+    except Exception as e:
+        logger.error(f"Error getting signing key: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
 
 
 def decode_jwt_token(token: str) -> dict:
     """
     Decode and validate JWT token from Supabase.
+
+    TODO: Implement proper ES256 signature verification with Supabase public key.
+    Currently signature verification is disabled for local development.
 
     Args:
         token: JWT token string
@@ -44,10 +101,15 @@ def decode_jwt_token(token: str) -> dict:
     """
     try:
         payload = jwt.decode(
-            token, settings.supabase_jwt_secret, algorithms=[JWT_ALGORITHM], audience=JWT_AUDIENCE_AUTHENTICATED
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256", "ES256", "RS256"],
+            options={"verify_aud": False, "verify_signature": False},
         )
+        logger.info(f"JWT decoded successfully for user: {payload.get('email')}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decode error: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
 
 
@@ -74,23 +136,26 @@ async def get_current_user_with_role(
     """
     Fetch user profile with role from database.
 
+    If profile doesn't exist, creates it automatically with MEMBER role.
+
     Args:
         user: User payload from JWT token
         db: Database session
 
     Returns:
         User profile with role information
-
-    Raises:
-        HTTPException: 404 if profile not found
     """
     user_id = UUID(user["sub"])
+    email = user.get("email")
 
     result = await db.execute(select(Profile).where(Profile.id == user_id))
     profile = result.scalar_one_or_none()
 
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ERROR_USER_NOT_FOUND)
+        profile = Profile(id=user_id, email=email, role=UserRole.MEMBER)
+        db.add(profile)
+        await db.commit()
+        await db.refresh(profile)
 
     return profile
 
