@@ -13,3 +13,10 @@ class BookStatus(str, Enum):
 
     AVAILABLE = "AVAILABLE"
     BORROWED = "BORROWED"
+
+
+class UserRole(str, Enum):
+    """Role of a user in the system."""
+
+    ADMIN = "ADMIN"
+    MEMBER = "MEMBER"
