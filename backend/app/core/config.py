@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     environment: str = "development"
     pythonunbuffered: str = "1"
+    supabase_jwt_secret: str
+    supabase_url: str | None = None
+    supabase_anon_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
