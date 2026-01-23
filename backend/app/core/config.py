@@ -6,7 +6,7 @@ Handles environment variables and application settings using Pydantic.
 
 import os
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.constants import DEFAULT_CORS_ORIGINS, DEFAULT_TEST_DB_URL
@@ -28,6 +28,30 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @field_validator("supabase_jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        """Ensure JWT secret is not a placeholder and meets minimum length."""
+        placeholder_values = [
+            "your-jwt-secret-from-supabase-dashboard",
+            "your_jwt_secret_here",
+            "changeme",
+        ]
+
+        if not v:
+            raise ValueError("SUPABASE_JWT_SECRET must not be empty")
+
+        if v.lower() in [p.lower() for p in placeholder_values]:
+            raise ValueError(
+                "SUPABASE_JWT_SECRET must be set to a valid JWT secret. "
+                "Get it from Supabase Dashboard > Settings > API > JWT Secret"
+            )
+
+        if len(v) < 32:
+            raise ValueError("SUPABASE_JWT_SECRET must be at least 32 characters for security")
+
+        return v
 
     @model_validator(mode="after")
     def set_database_url(self) -> "Settings":
