@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv("OPENROUTER_API_KEY")
-print(f"API Key loaded: {api_key[:20]}..." if api_key else "API Key NOT loaded!")
-print(f"API Key starts with sk-or-v1-: {api_key.startswith('sk-or-v1-') if api_key else 'N/A'}")
+print("API Key loaded" if api_key else "API Key NOT loaded!")
+has_valid_prefix = api_key is not None and api_key.startswith("sk-or-v1-") if api_key else False
+print(f"API Key has valid prefix: {has_valid_prefix}")
 
 from app.services.ai_service import generate_book_summary  # noqa: E402
 
