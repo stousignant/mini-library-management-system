@@ -31,7 +31,21 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Downgrade schema: Change summary from TEXT back to VARCHAR(1000)."""
+    """Downgrade schema: Change summary from TEXT back to VARCHAR(1000).
+
+    WARNING: This will truncate any summaries longer than 1000 characters.
+    """
+    connection = op.get_bind()
+
+    result = connection.execute(sa.text("SELECT COUNT(*) FROM books WHERE LENGTH(summary) > 1000"))
+    count_to_truncate = result.scalar()
+
+    if count_to_truncate > 0:
+        print(f"⚠️  WARNING: Truncating {count_to_truncate} book summaries from >1000 to 1000 characters")
+        connection.execute(
+            sa.text("UPDATE books SET summary = SUBSTRING(summary FROM 1 FOR 1000) WHERE LENGTH(summary) > 1000")
+        )
+
     op.alter_column(
         "books",
         "summary",
