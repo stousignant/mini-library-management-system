@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { DEFAULT_API_URL, CONTENT_TYPE_JSON } from '@/constants/global'
+import { supabase } from './supabase'
 
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL
@@ -27,6 +28,18 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': CONTENT_TYPE_JSON,
   },
+})
+
+apiClient.interceptors.request.use(async config => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`
+  }
+
+  return config
 })
 
 export default apiClient
