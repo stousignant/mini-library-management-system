@@ -5,6 +5,7 @@ Tests the end-to-end process of updating book summaries
 using AI generation, including database updates and error handling.
 """
 
+import os
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,6 +13,13 @@ from sqlalchemy import select
 
 from app.models.book import Book
 from app.models.enums import BookStatus
+
+
+def mock_getenv(key, default=None):
+    """Mock os.getenv that returns test API key for OPENROUTER_API_KEY."""
+    if key == "OPENROUTER_API_KEY":
+        return "test-api-key"
+    return os.environ.get(key, default)
 
 
 @pytest.mark.asyncio
@@ -50,7 +58,10 @@ async def test_update_summaries_for_books_with_poor_summaries(async_session):
     mock_client.__enter__ = Mock(return_value=mock_client)
     mock_client.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+    with (
+        patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+        patch("os.getenv", side_effect=mock_getenv),
+    ):
         from scripts.update_book_summaries import update_book_summaries
 
         await update_book_summaries(db=async_session)
@@ -99,7 +110,10 @@ async def test_update_summaries_handles_api_failures_gracefully(async_session):
     mock_client.__enter__ = Mock(return_value=mock_client)
     mock_client.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+    with (
+        patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+        patch("os.getenv", side_effect=mock_getenv),
+    ):
         from scripts.update_book_summaries import update_book_summaries
 
         await update_book_summaries(db=async_session)
@@ -134,7 +148,10 @@ async def test_update_summaries_is_idempotent(async_session):
     mock_client.__enter__ = Mock(return_value=mock_client)
     mock_client.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+    with (
+        patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+        patch("os.getenv", side_effect=mock_getenv),
+    ):
         from scripts.update_book_summaries import update_book_summaries
 
         await update_book_summaries(db=async_session)
@@ -157,7 +174,10 @@ async def test_update_summaries_is_idempotent(async_session):
     mock_client.__enter__ = Mock(return_value=mock_client)
     mock_client.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+    with (
+        patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+        patch("os.getenv", side_effect=mock_getenv),
+    ):
         await update_book_summaries(db=async_session)
 
     await async_session.commit()
@@ -181,7 +201,10 @@ async def test_update_summaries_with_no_books(async_session):
     mock_client.__enter__ = Mock(return_value=mock_client)
     mock_client.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+    with (
+        patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+        patch("os.getenv", side_effect=mock_getenv),
+    ):
         from scripts.update_book_summaries import update_book_summaries
 
         await update_book_summaries(db=async_session)

@@ -5,11 +5,19 @@ Tests the OpenAI integration for generating book summaries.
 Uses mocked API responses to avoid actual API calls during testing.
 """
 
+import os
 from unittest.mock import Mock, patch
 
 import pytest
 
 from app.services.ai_service import generate_book_summary, is_poor_summary
+
+
+def mock_getenv(key, default=None):
+    """Mock os.getenv that returns test API key for OPENROUTER_API_KEY."""
+    if key == "OPENROUTER_API_KEY":
+        return "test-api-key"
+    return os.environ.get(key, default)
 
 
 class TestIsPoorSummary:
@@ -79,7 +87,10 @@ class TestGenerateBookSummary:
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=False)
 
-        with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+        with (
+            patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+            patch("os.getenv", side_effect=mock_getenv),
+        ):
             result = await generate_book_summary(title="Clean Code", author="Robert C. Martin", isbn="9780132350884")
 
             assert result == "A compelling tale of software craftsmanship."
@@ -96,7 +107,10 @@ class TestGenerateBookSummary:
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=False)
 
-        with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+        with (
+            patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+            patch("os.getenv", side_effect=mock_getenv),
+        ):
             result = await generate_book_summary(title="The Pragmatic Programmer", author="Andy Hunt", isbn=None)
 
             assert result == "An engaging programming book."
@@ -109,7 +123,10 @@ class TestGenerateBookSummary:
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=False)
 
-        with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+        with (
+            patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+            patch("os.getenv", side_effect=mock_getenv),
+        ):
             result = await generate_book_summary(title="Test Book", author="Test Author", isbn="1234567890")
 
             assert result is None
@@ -125,7 +142,10 @@ class TestGenerateBookSummary:
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=False)
 
-        with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+        with (
+            patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+            patch("os.getenv", side_effect=mock_getenv),
+        ):
             await generate_book_summary(title="Test Book", author="Test Author", isbn="1234567890")
 
             call_kwargs = mock_client.chat.send.call_args[1]
@@ -144,7 +164,10 @@ class TestGenerateBookSummary:
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=False)
 
-        with patch("app.services.ai_service.OpenRouter", return_value=mock_client):
+        with (
+            patch("app.services.ai_service.OpenRouter", return_value=mock_client),
+            patch("os.getenv", side_effect=mock_getenv),
+        ):
             await generate_book_summary(title="Clean Code", author="Robert C. Martin", isbn="9780132350884")
 
             call_kwargs = mock_client.chat.send.call_args[1]
