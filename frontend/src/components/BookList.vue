@@ -9,7 +9,8 @@ import type { Book } from '@/types/Book'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { BookOpen, CheckCircle, Clock, Search, AlertCircle, Loader2 } from 'lucide-vue-next'
+import { BookOpen, CheckCircle, Clock, Search, AlertCircle, Loader2, User } from 'lucide-vue-next'
+import { Badge } from '@/components/ui/badge'
 
 const bookStore = useBookStore()
 const authStore = useAuthStore()
@@ -18,6 +19,7 @@ const isModalOpen = ref(false)
 const bookToEdit = ref<Book | undefined>(undefined)
 
 onMounted(() => {
+  bookStore.filterUserId = authStore.user?.id || null
   bookStore.fetchBooks()
   statsStore.fetchStatistics()
   bookStore.startPolling()
@@ -114,6 +116,30 @@ async function handleDelete(bookId: number) {
           </p>
         </CardContent>
       </Card>
+    </div>
+
+    <!-- My Books Filter Button -->
+    <div v-if="authStore.isAuthenticated" class="flex justify-center">
+      <Button
+        :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
+        size="lg"
+        class="gap-2"
+        @click="() => {
+          bookStore.filterUserId = authStore.user?.id || null
+          bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
+        }"
+      >
+        <User class="h-5 w-5" />
+        <span class="font-semibold">
+          {{ bookStore.showMyBooksOnly ? 'Show All Books' : 'Show My Books' }}
+        </span>
+        <Badge
+          :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
+          class="ml-1"
+        >
+          {{ bookStore.myBorrowedCount }}
+        </Badge>
+      </Button>
     </div>
 
     <!-- Loading State -->

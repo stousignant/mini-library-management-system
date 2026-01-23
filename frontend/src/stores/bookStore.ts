@@ -11,17 +11,40 @@ export const useBookStore = defineStore('book', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const searchQuery = ref('')
+  const showMyBooksOnly = ref(false)
+  const filterUserId = ref<string | null>(null)
   let pollingInterval: ReturnType<typeof setInterval> | null = null
 
-  const filteredBooks = computed(() => {
-    const query = searchQuery.value.toLowerCase().trim()
-    if (!query) return books.value
+  const myBorrowedCount = computed(() => {
+    if (!filterUserId.value) return 0
 
     return books.value.filter(
-      book =>
-        book.title.toLowerCase().includes(query) ||
-        book.author.toLowerCase().includes(query)
-    )
+      book => book.borrowed_by === filterUserId.value
+    ).length
+  })
+
+  const filteredBooks = computed(() => {
+    const shouldFilterMine = showMyBooksOnly.value
+    const userId = filterUserId.value
+    const currentBooks = books.value
+    const query = searchQuery.value
+
+    let result = [...currentBooks]
+
+    if (shouldFilterMine && userId) {
+      result = result.filter(book => book.borrowed_by === userId)
+    }
+
+    const searchTerm = query.toLowerCase().trim()
+    if (searchTerm) {
+      result = result.filter(
+        book =>
+          book.title.toLowerCase().includes(searchTerm) ||
+          book.author.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    return result
   })
 
   async function fetchBooks(silent = false) {
@@ -173,6 +196,9 @@ export const useBookStore = defineStore('book', () => {
     isLoading,
     error,
     searchQuery,
+    showMyBooksOnly,
+    filterUserId,
+    myBorrowedCount,
     filteredBooks,
     fetchBooks,
     toggleStatus,
