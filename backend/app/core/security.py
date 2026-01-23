@@ -5,6 +5,7 @@ Handles JWT token verification, user authentication, and role-based access contr
 """
 
 import logging
+import re
 import time
 from uuid import UUID
 
@@ -199,6 +200,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(o
     return decode_jwt_token(token)
 
 
+def validate_email(email: str) -> str:
+    """
+    Validate email format.
+
+    Args:
+        email: Email address to validate
+
+    Returns:
+        Validated email address
+
+    Raises:
+        HTTPException: 400 if email format is invalid
+    """
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found in token")
+
+    email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(email_pattern, email):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format in token")
+
+    return email
+
+
 async def get_current_user_with_role(
     user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> Profile:
@@ -207,7 +231,7 @@ async def get_current_user_with_role(
 
     If profile doesn't exist, creates it automatically with MEMBER role.
     Handles race conditions where multiple requests try to create the same
-    profile simultaneously.
+    profile simultaneously. Validates email format before creating profile.
 
     Args:
         user: User payload from JWT token
@@ -217,10 +241,12 @@ async def get_current_user_with_role(
         User profile with role information
 
     Raises:
+        HTTPException: 400 if email is invalid
         HTTPException: 500 if unable to fetch or create profile
     """
     user_id = UUID(user["sub"])
-    email = user.get("email")
+    raw_email = user.get("email")
+    email = validate_email(raw_email)
 
     result = await db.execute(select(Profile).where(Profile.id == user_id))
     profile = result.scalar_one_or_none()
