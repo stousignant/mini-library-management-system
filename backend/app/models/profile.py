@@ -7,11 +7,9 @@ and is automatically synced from auth.users via trigger.
 
 from sqlalchemy import Column, DateTime, Enum, String, text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import declarative_base
 
+from app.models import Base
 from app.models.enums import UserRole
-
-Base = declarative_base()
 
 
 class Profile(Base):
