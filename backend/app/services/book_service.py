@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import DEFAULT_BOOK_STATUS
 from app.models.book import Book
+from app.models.enums import BookStatus
 from app.schemas.book import BookCreate, BookUpdate
 
 
@@ -113,3 +114,59 @@ async def delete_book(db: AsyncSession, book_id: int) -> bool:
     await db.commit()
 
     return True
+
+
+async def borrow_book(db: AsyncSession, book_id: int) -> Book | None:
+    """
+    Mark a book as borrowed.
+
+    Args:
+        db: Database session
+        book_id: ID of the book to borrow
+
+    Returns:
+        Updated book entity if found and available, None otherwise
+
+    Raises:
+        ValueError: If book is already borrowed
+    """
+    book = await get_book_by_id(db, book_id)
+    if book is None:
+        return None
+
+    if book.status == BookStatus.BORROWED:
+        raise ValueError("Book is already borrowed")
+
+    book.status = BookStatus.BORROWED
+    await db.commit()
+    await db.refresh(book)
+
+    return book
+
+
+async def return_book(db: AsyncSession, book_id: int) -> Book | None:
+    """
+    Mark a book as returned (available).
+
+    Args:
+        db: Database session
+        book_id: ID of the book to return
+
+    Returns:
+        Updated book entity if found and borrowed, None otherwise
+
+    Raises:
+        ValueError: If book is not borrowed
+    """
+    book = await get_book_by_id(db, book_id)
+    if book is None:
+        return None
+
+    if book.status == BookStatus.AVAILABLE:
+        raise ValueError("Book is not borrowed")
+
+    book.status = BookStatus.AVAILABLE
+    await db.commit()
+    await db.refresh(book)
+
+    return book

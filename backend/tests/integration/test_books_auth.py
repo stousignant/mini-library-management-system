@@ -232,3 +232,111 @@ class TestBooksAuthIntegration:
 
         assert response.status_code == 401
         assert "Could not validate credentials" in response.json()["detail"]
+
+    async def test_member_can_borrow_available_book(self, client: AsyncClient, admin_token: str, member_token: str):
+        """PATCH /books/{id}/borrow should allow member to borrow available book."""
+        # Create book as admin
+        book_data = {"title": "Borrowable Book", "author": "Test Author", "isbn": "1234567890"}
+        create_response = await client.post(
+            "/books/",
+            json=book_data,
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        book_id = create_response.json()["id"]
+
+        # Member borrows the book
+        response = await client.patch(
+            f"/books/{book_id}/borrow",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "BORROWED"
+
+    async def test_member_can_return_borrowed_book(self, client: AsyncClient, admin_token: str, member_token: str):
+        """PATCH /books/{id}/return should allow member to return borrowed book."""
+        # Create and borrow book
+        book_data = {"title": "Returnable Book", "author": "Test Author", "isbn": "1234567890"}
+        create_response = await client.post(
+            "/books/",
+            json=book_data,
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        book_id = create_response.json()["id"]
+
+        await client.patch(
+            f"/books/{book_id}/borrow",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        # Member returns the book
+        response = await client.patch(
+            f"/books/{book_id}/return",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "AVAILABLE"
+
+    async def test_borrow_already_borrowed_book_fails(self, client: AsyncClient, admin_token: str, member_token: str):
+        """Borrowing already borrowed book should return 400."""
+        # Create and borrow book
+        book_data = {"title": "Already Borrowed", "author": "Test Author", "isbn": "1234567890"}
+        create_response = await client.post(
+            "/books/",
+            json=book_data,
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        book_id = create_response.json()["id"]
+
+        await client.patch(
+            f"/books/{book_id}/borrow",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        # Try to borrow again
+        response = await client.patch(
+            f"/books/{book_id}/borrow",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        assert response.status_code == 400
+        assert "already borrowed" in response.json()["detail"].lower()
+
+    async def test_return_available_book_fails(self, client: AsyncClient, admin_token: str, member_token: str):
+        """Returning available book should return 400."""
+        # Create book (available by default)
+        book_data = {"title": "Available Book", "author": "Test Author", "isbn": "1234567890"}
+        create_response = await client.post(
+            "/books/",
+            json=book_data,
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        book_id = create_response.json()["id"]
+
+        # Try to return an available book
+        response = await client.patch(
+            f"/books/{book_id}/return",
+            headers={"Authorization": f"Bearer {member_token}"},
+        )
+
+        assert response.status_code == 400
+        assert "not borrowed" in response.json()["detail"].lower()
+
+    async def test_borrow_requires_authentication(self, client: AsyncClient, admin_token: str):
+        """PATCH /books/{id}/borrow should require authentication."""
+        # Create book as admin
+        book_data = {"title": "Auth Required", "author": "Test Author", "isbn": "1234567890"}
+        create_response = await client.post(
+            "/books/",
+            json=book_data,
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        book_id = create_response.json()["id"]
+
+        # Try to borrow without token
+        response = await client.patch(f"/books/{book_id}/borrow")
+
+        assert response.status_code == 401
