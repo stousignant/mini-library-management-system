@@ -133,7 +133,8 @@ async def borrow_book(db: AsyncSession, book_id: int, user_id: UUID) -> Book | N
     Raises:
         ValueError: If book is already borrowed
     """
-    book = await get_book_by_id(db, book_id)
+    result = await db.execute(select(Book).where(Book.id == book_id).with_for_update())
+    book = result.scalar_one_or_none()
     if book is None:
         return None
 
