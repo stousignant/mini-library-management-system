@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../authStore'
 import { supabase } from '@/services/supabase'
 import apiClient from '@/services/api'
+import type { User, Session } from '@supabase/supabase-js'
 
 vi.mock('@/services/supabase', () => ({
   supabase: {
@@ -48,8 +49,8 @@ describe('authStore', () => {
     const authStore = useAuthStore()
     authStore.session = {
       access_token: 'test-token',
-      user: { id: '123', email: 'test@example.com' },
-    } as any
+      user: { id: '123', email: 'test@example.com' } as User,
+    } as Session
 
     expect(authStore.isAuthenticated).toBe(true)
   })
@@ -65,15 +66,15 @@ describe('authStore', () => {
             id: '123',
             email: 'admin@example.com',
             app_metadata: { role: 'ADMIN' },
-          } as any,
-        } as any,
+          } as User,
+        } as Session,
       },
       error: null,
-    } as any)
+    })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
-    } as any)
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'ADMIN' },
@@ -95,15 +96,15 @@ describe('authStore', () => {
             id: '123',
             email: 'admin@example.com',
             app_metadata: { role: 'ADMIN' },
-          } as any,
-        } as any,
+          } as User,
+        } as Session,
       },
       error: null,
-    } as any)
+    })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
-    } as any)
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'ADMIN' },
@@ -125,15 +126,15 @@ describe('authStore', () => {
             id: '123',
             email: 'member@example.com',
             app_metadata: { role: 'MEMBER' },
-          } as any,
-        } as any,
+          } as User,
+        } as Session,
       },
       error: null,
-    } as any)
+    })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
-    } as any)
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'MEMBER' },
@@ -179,9 +180,9 @@ describe('authStore', () => {
 
     authStore.session = {
       access_token: 'test-token',
-      user: { id: '123', email: 'test@example.com' },
-    } as any
-    authStore.user = { id: '123', email: 'test@example.com' } as any
+      user: { id: '123', email: 'test@example.com' } as User,
+    } as Session
+    authStore.user = { id: '123', email: 'test@example.com' } as User
 
     vi.mocked(supabase.auth.signOut).mockResolvedValue({
       error: null,
@@ -205,15 +206,15 @@ describe('authStore', () => {
             id: '123',
             email: 'test@example.com',
             app_metadata: { role: 'MEMBER' },
-          } as any,
-        } as any,
+          } as User,
+        } as Session,
       },
       error: null,
-    } as any)
+    })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
-    } as any)
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'MEMBER' },

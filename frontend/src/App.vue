@@ -14,7 +14,9 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-gray-50">
     <header class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+      <div
+        class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center"
+      >
         <h1 class="text-3xl font-bold text-gray-900">
           Library Management System
         </h1>

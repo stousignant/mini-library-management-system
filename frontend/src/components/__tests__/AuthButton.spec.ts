@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import AuthButton from '../AuthButton.vue'
 import { useAuthStore } from '@/stores/authStore'
+import type { User, Session } from '@supabase/supabase-js'
 
 vi.mock('@/services/supabase', () => ({
   supabase: {
@@ -47,13 +48,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'test@example.com',
         app_metadata: { role: 'MEMBER' },
-      },
-    } as any
+      } as User,
+    } as Session
     authStore.user = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as any
+    } as User
     authStore.userRole = 'MEMBER'
 
     await wrapper.vm.$nextTick()
@@ -73,13 +74,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'admin@example.com',
         app_metadata: { role: 'ADMIN' },
-      },
-    } as any
+      } as User,
+    } as Session
     authStore.user = {
       id: '123',
       email: 'admin@example.com',
       app_metadata: { role: 'ADMIN' },
-    } as any
+    } as User
     authStore.userRole = 'ADMIN'
 
     await wrapper.vm.$nextTick()
@@ -91,7 +92,9 @@ describe('AuthButton', () => {
   it('calls signInWithGithub when GitHub button clicked', async () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
-    const signInSpy = vi.spyOn(authStore, 'signInWithGithub').mockResolvedValue()
+    const signInSpy = vi
+      .spyOn(authStore, 'signInWithGithub')
+      .mockResolvedValue()
 
     const buttons = wrapper.findAll('button')
     const githubButton = buttons.find(b => b.text().includes('GitHub'))
@@ -103,7 +106,9 @@ describe('AuthButton', () => {
   it('calls signInWithGoogle when Google button clicked', async () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
-    const signInSpy = vi.spyOn(authStore, 'signInWithGoogle').mockResolvedValue()
+    const signInSpy = vi
+      .spyOn(authStore, 'signInWithGoogle')
+      .mockResolvedValue()
 
     const buttons = wrapper.findAll('button')
     const googleButton = buttons.find(b => b.text().includes('Google'))
@@ -122,13 +127,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'test@example.com',
         app_metadata: { role: 'MEMBER' },
-      },
-    } as any
+      } as User,
+    } as Session
     authStore.user = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as any
+    } as User
 
     await wrapper.vm.$nextTick()
 

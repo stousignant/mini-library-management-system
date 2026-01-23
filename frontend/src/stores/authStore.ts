@@ -21,7 +21,8 @@ export const useAuthStore = defineStore('auth', () => {
       userRole.value = response.data.role
       error.value = null
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user profile'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch user profile'
       console.error('Error fetching user profile:', errorMessage)
       error.value = errorMessage
       userRole.value = null
@@ -32,7 +33,10 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     try {
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      const {
+        data: { session: currentSession },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
       if (sessionError) {
         error.value = sessionError.message
@@ -58,7 +62,10 @@ export const useAuthStore = defineStore('auth', () => {
         }
       })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize authentication'
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to initialize authentication'
       error.value = errorMessage
       console.error('Error initializing auth:', errorMessage)
     } finally {
@@ -82,7 +89,10 @@ export const useAuthStore = defineStore('auth', () => {
         throw authError
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to sign in with ${providerName}`
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : `Failed to sign in with ${providerName}`
       error.value = errorMessage
       console.error(`Error signing in with ${providerName}:`, errorMessage)
       throw err
@@ -116,7 +126,8 @@ export const useAuthStore = defineStore('auth', () => {
       userRole.value = null
       error.value = null
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign out'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to sign out'
       error.value = errorMessage
       console.error('Error signing out:', errorMessage)
       throw err

@@ -73,8 +73,8 @@ const handleSignOut = async () => {
         </span>
       </div>
       <button
-        @click="handleSignOut"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+        @click="handleSignOut"
       >
         Sign Out
       </button>
@@ -83,8 +83,8 @@ const handleSignOut = async () => {
     <!-- Unauthenticated State -->
     <div v-else class="flex items-center gap-3">
       <button
-        @click="handleSignInWithGithub"
         class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors"
+        @click="handleSignInWithGithub"
       >
         <svg
           class="w-5 h-5"
@@ -102,10 +102,14 @@ const handleSignOut = async () => {
       </button>
 
       <button
-        @click="handleSignInWithGoogle"
         class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        @click="handleSignInWithGoogle"
       >
-        <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          class="w-5 h-5"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
             fill="#4285F4"
