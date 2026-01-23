@@ -53,7 +53,15 @@ FastAPI backend service for the Library Management System. Provides a comprehens
 - Automatic seeding on first deployment
 - Idempotent and resumable
 
-**6. Professional Development Stack** 🛠️
+**6. AI-Generated Book Summaries** 🤖
+- OpenRouter integration for AI-powered summaries
+- Automatic detection of missing/poor summaries
+- Batch processing with progress tracking
+- Idempotent updates (safe to run multiple times)
+- Rate limiting and error handling
+- Cost-efficient with gpt-4o-mini model
+
+**7. Professional Development Stack** 🛠️
 - Async/await throughout (AsyncSession, asyncpg)
 - SQLAlchemy 2.0+ with modern mapped_column syntax
 - Alembic migrations with version control
@@ -61,7 +69,7 @@ FastAPI backend service for the Library Management System. Provides a comprehens
 - Strict linting with ruff
 - Pre-commit hooks
 
-**7. Production Ready** 🚀
+**8. Production Ready** 🚀
 - CORS with wildcard support for dynamic deployments
 - Health check endpoint
 - Environment-based configuration
@@ -335,6 +343,103 @@ fly ssh console -C "python -m scripts.seed_production"
 **`scripts/seed_production.py`** - Production seeding (100 books)
 - Full collection with progress tracking
 - Safety prompts if database has existing books
+
+## AI-Generated Book Summaries
+
+The application can automatically generate engaging, high-quality book summaries using AI through OpenRouter. This feature enhances the basic "Published by..." summaries from Open Library with compelling descriptions.
+
+### Setup
+
+1. **Get an OpenRouter API Key:**
+   - Sign up at [openrouter.ai](https://openrouter.ai)
+   - Create an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+
+2. **Configure Environment:**
+   ```bash
+   # Add to your .env file
+   OPENROUTER_API_KEY=sk-or-v1-your-api-key-here
+   ```
+
+### Running the Script
+
+The script intelligently updates books with missing or poor-quality summaries:
+
+```bash
+cd backend
+uv run python scripts/update_book_summaries.py
+```
+
+### Features
+
+- **Smart Detection:** Automatically identifies books needing summaries
+- **Idempotent:** Safe to run multiple times (won't overwrite good summaries)
+- **Progress Tracking:** Real-time progress with [current/total] indicators
+- **Error Handling:** Graceful failure handling, continues on errors
+- **Rate Limiting:** Built-in delays to respect API rate limits
+- **Batch Commits:** Commits every 10 books to prevent data loss
+- **Cost Efficient:** Uses `openai/gpt-4o-mini` (~$0.001-0.01 per book)
+
+### Example Output
+
+```
+============================================================
+🤖 UPDATING BOOK SUMMARIES WITH AI
+============================================================
+
+📊 Found 99 books in database
+🔍 Identified 96 books needing summaries
+------------------------------------------------------------
+
+[1/96] Generating summary for: Clean Code
+         Author: Robert C. Martin
+         ✅ Summary generated (287 characters)
+
+[2/96] Generating summary for: The Pragmatic Programmer
+         Author: Andy Hunt
+         ✅ Summary generated (312 characters)
+...
+💾 Progress saved (committed 10 books)
+...
+============================================================
+✨ UPDATE COMPLETE!
+============================================================
+📚 Updated:  95 book(s)
+⏭️  Skipped:  1 book(s)
+⚠️  Failed:   0 book(s)
+📊 Total:    99 book(s) in database
+============================================================
+```
+
+### Cost Estimation
+
+Using `openai/gpt-4o-mini` through OpenRouter:
+- **Input:** ~100 tokens per book (prompt)
+- **Output:** ~150 tokens per book (summary)
+- **Cost:** $0.15/$0.60 per 1M tokens (input/output)
+- **Per Book:** ~$0.001-0.01
+- **100 Books:** ~$0.10-$1.00 total
+
+### Configuration
+
+AI settings can be adjusted in `app/core/constants.py`:
+
+```python
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENAI_MODEL = "openai/gpt-4o-mini"  # Model to use
+OPENAI_MAX_TOKENS = 500              # Max summary length
+OPENAI_TEMPERATURE = 0.7             # Creativity (0.0-1.0)
+OPENAI_RATE_LIMIT_DELAY_SECONDS = 0.5  # Delay between requests
+```
+
+### Alternative Models
+
+You can use any model available on OpenRouter by changing `OPENAI_MODEL`:
+
+- `openai/gpt-4o-mini` - Cheapest, good quality (~$0.15/$0.60 per 1M)
+- `anthropic/claude-3.5-haiku` - Very fast (~$1/$5 per 1M)
+- `meta-llama/llama-3.1-8b-instruct` - Very cheap (~$0.06/$0.06 per 1M)
+
+See [openrouter.ai/models](https://openrouter.ai/models) for all available models.
 - Detailed statistics and error reporting
 - Commits every 10 books for reliability
 
