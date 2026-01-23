@@ -13,7 +13,7 @@ from app.core.security import get_current_user_with_role, require_role
 from app.models.book import Book
 from app.models.enums import UserRole
 from app.models.profile import Profile
-from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.book import BookCreate, BookResponse, BookStatistics, BookUpdate
 from app.services import book_service
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -52,6 +52,22 @@ async def list_books(
         List of all books
     """
     return await book_service.get_all_books(db)
+
+
+@router.get("/stats", response_model=BookStatistics, status_code=status.HTTP_200_OK)
+async def get_book_statistics(
+    db: AsyncSession = Depends(get_db),
+) -> BookStatistics:
+    """
+    Get book statistics including total count, available, and borrowed.
+
+    Args:
+        db: Database session
+
+    Returns:
+        BookStatistics with total, available, and borrowed counts
+    """
+    return await book_service.get_book_statistics(db)
 
 
 @router.get("/{book_id}", response_model=BookResponse, status_code=status.HTTP_200_OK)

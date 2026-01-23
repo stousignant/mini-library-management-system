@@ -6,13 +6,13 @@ Handles business logic and database operations for books.
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import DEFAULT_BOOK_STATUS
 from app.models.book import Book
 from app.models.enums import BookStatus
-from app.schemas.book import BookCreate, BookUpdate
+from app.schemas.book import BookCreate, BookStatistics, BookUpdate
 
 
 async def create_book(db: AsyncSession, book_data: BookCreate) -> Book:
@@ -181,3 +181,27 @@ async def return_book(db: AsyncSession, book_id: int, user_id: UUID | None = Non
     await db.refresh(book)
 
     return book
+
+
+async def get_book_statistics(db: AsyncSession) -> BookStatistics:
+    """
+    Get book statistics including total, available, and borrowed counts.
+
+    Args:
+        db: Database session
+
+    Returns:
+        BookStatistics with counts
+    """
+    total_result = await db.execute(select(func.count()).select_from(Book))
+    total = total_result.scalar_one()
+
+    available_result = await db.execute(
+        select(func.count()).select_from(Book).where(Book.status == BookStatus.AVAILABLE)
+    )
+    available = available_result.scalar_one()
+
+    borrowed_result = await db.execute(select(func.count()).select_from(Book).where(Book.status == BookStatus.BORROWED))
+    borrowed = borrowed_result.scalar_one()
+
+    return BookStatistics(total=total, available=available, borrowed=borrowed)
