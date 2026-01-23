@@ -83,6 +83,20 @@ def get_supabase_jwks() -> dict:
         )
 
 
+def find_jwk_by_kid(jwks: dict, kid: str) -> dict | None:
+    """
+    Find JWK by key ID.
+
+    Args:
+        jwks: JWKS dictionary containing keys
+        kid: Key ID to search for
+
+    Returns:
+        JWK dictionary if found, None otherwise
+    """
+    return next((key for key in jwks.get("keys", []) if key.get("kid") == kid), None)
+
+
 def get_signing_key(token: str) -> str:
     """
     Get the public key for verifying JWT token signature.
@@ -101,17 +115,15 @@ def get_signing_key(token: str) -> str:
         kid = unverified_header.get("kid")
 
         if not kid:
-            logger.error("Token missing key ID (kid)")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing key ID")
 
         jwks = get_supabase_jwks()
+        jwk_data = find_jwk_by_kid(jwks, kid)
 
-        for key in jwks.get("keys", []):
-            if key.get("kid") == kid:
-                return jwk.construct(key)
+        if not jwk_data:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find matching signing key")
 
-        logger.error(f"No matching key found for kid: {kid}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find matching signing key")
+        return jwk.construct(jwk_data)
     except HTTPException:
         raise
     except Exception as e:
