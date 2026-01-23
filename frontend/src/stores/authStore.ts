@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
   const loading = ref(false)
   const userRole = ref<string | null>(null)
+  const error = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!session.value)
 
@@ -18,19 +19,24 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiClient.get('/profile')
       userRole.value = response.data.role
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
+      error.value = null
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user profile'
+      console.error('Error fetching user profile:', errorMessage)
+      error.value = errorMessage
       userRole.value = null
     }
   }
 
   async function initialize() {
     loading.value = true
+    error.value = null
     try {
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
 
-      if (error) {
-        console.error('Error getting session:', error)
+      if (sessionError) {
+        error.value = sessionError.message
+        console.error('Error getting session:', sessionError)
         return
       }
 
@@ -48,10 +54,13 @@ export const useAuthStore = defineStore('auth', () => {
           await fetchUserProfile()
         } else {
           userRole.value = null
+          error.value = null
         }
       })
-    } catch (error) {
-      console.error('Error initializing auth:', error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize authentication'
+      error.value = errorMessage
+      console.error('Error initializing auth:', errorMessage)
     } finally {
       loading.value = false
     }
@@ -59,18 +68,22 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function signInWithGithub() {
     loading.value = true
+    error.value = null
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'github',
       })
 
-      if (error) {
-        console.error('Error signing in:', error)
-        throw error
+      if (authError) {
+        error.value = authError.message
+        console.error('Error signing in:', authError)
+        throw authError
       }
-    } catch (error) {
-      console.error('Error signing in with GitHub:', error)
-      throw error
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with GitHub'
+      error.value = errorMessage
+      console.error('Error signing in with GitHub:', errorMessage)
+      throw err
     } finally {
       loading.value = false
     }
@@ -78,20 +91,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function signOut() {
     loading.value = true
+    error.value = null
     try {
-      const { error } = await supabase.auth.signOut()
+      const { error: authError } = await supabase.auth.signOut()
 
-      if (error) {
-        console.error('Error signing out:', error)
-        throw error
+      if (authError) {
+        error.value = authError.message
+        console.error('Error signing out:', authError)
+        throw authError
       }
 
       session.value = null
       user.value = null
       userRole.value = null
-    } catch (error) {
-      console.error('Error signing out:', error)
-      throw error
+      error.value = null
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign out'
+      error.value = errorMessage
+      console.error('Error signing out:', errorMessage)
+      throw err
     } finally {
       loading.value = false
     }
@@ -101,6 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     session,
     loading,
+    error,
     isAuthenticated,
     userRole,
     isAdmin,
