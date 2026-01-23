@@ -50,6 +50,11 @@ export const useBookStore = defineStore('book', () => {
     try {
       await apiClient.patch(`/books/${bookId}/${endpoint}`)
       toast.success(isBorrowing ? 'Book borrowed successfully!' : 'Book returned successfully!')
+
+      // Refresh stats after successful status change
+      const { useStatsStore } = await import('@/stores/statsStore')
+      const statsStore = useStatsStore()
+      await statsStore.fetchStatistics()
     } catch (_err) {
       book.status = originalStatus
       error.value = 'Failed to update book status'

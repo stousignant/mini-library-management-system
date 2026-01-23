@@ -14,3 +14,6 @@ export const DEFAULT_API_URL = `${DEFAULT_API_PROTOCOL}://${DEFAULT_API_HOST}:${
 
 // HTTP Headers
 export const CONTENT_TYPE_JSON = 'application/json'
+
+// Polling Intervals (milliseconds)
+export const STATS_POLLING_INTERVAL_MS = 10000

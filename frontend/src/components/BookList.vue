@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useBookStore } from '@/stores/bookStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useStatsStore } from '@/stores/statsStore'
@@ -20,6 +20,11 @@ const bookToEdit = ref<Book | undefined>(undefined)
 onMounted(() => {
   bookStore.fetchBooks()
   statsStore.fetchStatistics()
+  statsStore.startPolling()
+})
+
+onUnmounted(() => {
+  statsStore.stopPolling()
 })
 
 function openAddModal() {

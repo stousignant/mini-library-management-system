@@ -17,7 +17,14 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-background">
-    <Toaster position="top-right" :duration="3000" />
+    <Toaster
+      position="bottom-right"
+      :duration="3000"
+      :close-button="true"
+      :rich-colors="true"
+      :expand="false"
+      :offset="16"
+    />
     <header class="border-b bg-card">
       <div
         class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center"

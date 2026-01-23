@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getBookStatistics, type BookStatistics } from '@/services/api'
+import { STATS_POLLING_INTERVAL_MS } from '@/constants/global'
 
 export const useStatsStore = defineStore('stats', () => {
   const total = ref(0)
@@ -8,6 +9,7 @@ export const useStatsStore = defineStore('stats', () => {
   const borrowed = ref(0)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  let pollingInterval: ReturnType<typeof setInterval> | null = null
 
   async function fetchStatistics() {
     isLoading.value = true
@@ -26,6 +28,23 @@ export const useStatsStore = defineStore('stats', () => {
     }
   }
 
+  function startPolling() {
+    // Clear any existing polling interval
+    stopPolling()
+
+    // Set up new polling interval
+    pollingInterval = setInterval(() => {
+      fetchStatistics()
+    }, STATS_POLLING_INTERVAL_MS)
+  }
+
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+    }
+  }
+
   return {
     total,
     available,
@@ -33,5 +52,7 @@ export const useStatsStore = defineStore('stats', () => {
     isLoading,
     error,
     fetchStatistics,
+    startPolling,
+    stopPolling,
   }
 })
