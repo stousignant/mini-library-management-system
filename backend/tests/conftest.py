@@ -7,6 +7,12 @@ and other testing utilities.
 
 import os
 
+os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault(
+    "SUPABASE_JWT_SECRET",
+    "test-jwt-secret-for-testing-only-not-for-production-use",
+)
+
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
@@ -25,10 +31,8 @@ from app.models import Base
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_environment():
-    """Ensure ENVIRONMENT is set to 'test' for all tests."""
-    os.environ["ENVIRONMENT"] = "test"
+    """Ensure test environment variables are set for all tests."""
     yield
-    os.environ.pop("ENVIRONMENT", None)
 
 
 @pytest.fixture(scope="session")
