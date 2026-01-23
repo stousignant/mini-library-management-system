@@ -48,13 +48,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'test@example.com',
         app_metadata: { role: 'MEMBER' },
-      } as User,
+      } as unknown as User,
     } as Session
     authStore.user = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as User
+    } as unknown as User
     authStore.userRole = 'MEMBER'
 
     await wrapper.vm.$nextTick()
@@ -74,13 +74,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'admin@example.com',
         app_metadata: { role: 'ADMIN' },
-      } as User,
+      } as unknown as User,
     } as Session
     authStore.user = {
       id: '123',
       email: 'admin@example.com',
       app_metadata: { role: 'ADMIN' },
-    } as User
+    } as unknown as User
     authStore.userRole = 'ADMIN'
 
     await wrapper.vm.$nextTick()
@@ -127,13 +127,13 @@ describe('AuthButton', () => {
         id: '123',
         email: 'test@example.com',
         app_metadata: { role: 'MEMBER' },
-      } as User,
+      } as unknown as User,
     } as Session
     authStore.user = {
       id: '123',
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
-    } as User
+    } as unknown as User
 
     await wrapper.vm.$nextTick()
 
