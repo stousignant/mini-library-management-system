@@ -1,6 +1,73 @@
 # Library Management System - Backend
 
-FastAPI backend service for the Library Management System.
+FastAPI backend service for the Library Management System. Provides a comprehensive REST API with authentication, role-based access control, and real-time book management capabilities.
+
+## Features
+
+### ✅ Minimum Requirements (Delivered)
+
+**1. Book Management API**
+- Create, read, update, delete books
+- Rich metadata support (title, author, ISBN, cover images, summaries)
+- Input validation and error handling
+
+**2. Check-in/Check-out System**
+- Borrow book endpoint with user tracking
+- Return book endpoint with validation
+- Status management (AVAILABLE/BORROWED)
+
+**3. Search & Filtering**
+- List all books endpoint
+- Query by ID
+- Frontend implements search by title/author
+
+### 🚀 Extra Features (Built Beyond Minimum)
+
+**1. Authentication & Authorization** 🔐
+- Supabase JWT token validation
+- Automatic user profile sync from auth.users
+- Token refresh handling
+- Secure password-less authentication
+
+**2. Role-Based Access Control (RBAC)** 👥
+- ADMIN and MEMBER roles
+- Hierarchical permission system
+- Protected endpoints with `require_role` decorator
+- Flexible permission inheritance
+
+**3. Real-time Statistics API** 📊
+- Book statistics endpoint
+- Aggregate counts (total, available, borrowed)
+- Optimized database queries
+
+**4. User-specific Borrowing** 📖
+- Track borrower UUID on books
+- User can only return own borrowed books
+- Admin override capability
+- Concurrency control with row-level locking
+
+**5. Database Seeding** 🌱
+- Production seeding script (100 books)
+- Development quick-seed (8 books)
+- Open Library API integration
+- Automatic seeding on first deployment
+- Idempotent and resumable
+
+**6. Professional Development Stack** 🛠️
+- Async/await throughout (AsyncSession, asyncpg)
+- SQLAlchemy 2.0+ with modern mapped_column syntax
+- Alembic migrations with version control
+- Comprehensive test suite with pytest
+- Strict linting with ruff
+- Pre-commit hooks
+
+**7. Production Ready** 🚀
+- CORS with wildcard support for dynamic deployments
+- Health check endpoint
+- Environment-based configuration
+- Docker multi-stage builds
+- Database connection pooling
+- Automatic migration runner
 
 ## Tech Stack
 
@@ -65,25 +132,168 @@ uv run pytest --cov=app tests/
 
 ```
 backend/
+├── alembic/                      # Database migrations
+│   ├── versions/                 # Migration version files
+│   ├── env.py                    # Alembic environment config
+│   └── script.py.mako            # Migration template
 ├── app/
 │   ├── core/
-│   │   ├── __init__.py
-│   │   └── constants.py  # Application-wide constants (zero magic numbers policy)
+│   │   ├── config.py             # Environment configuration
+│   │   ├── constants.py          # Application-wide constants (zero magic numbers)
+│   │   ├── database.py           # Database session management
+│   │   └── security.py           # JWT auth & role validation
+│   ├── models/
+│   │   ├── book.py               # Book SQLAlchemy model
+│   │   ├── profile.py            # User profile model
+│   │   └── enums.py              # BookStatus, UserRole enums
+│   ├── routes/
+│   │   ├── books.py              # Book API endpoints
+│   │   └── profile.py            # Profile API endpoint
+│   ├── schemas/
+│   │   ├── book.py               # Pydantic schemas for books
+│   │   └── profile.py            # Pydantic schemas for profiles
+│   ├── services/
+│   │   └── book_service.py       # Business logic for books
 │   ├── __init__.py
-│   └── main.py           # FastAPI application entry point
+│   └── main.py                   # FastAPI application entry point
+├── scripts/
+│   ├── seed_books.py             # Development seeding (8 books)
+│   └── seed_production.py        # Production seeding (100 books)
 ├── tests/
-│   ├── __init__.py
-│   └── test_health.py    # Health check tests
-├── .env.example          # Example environment variables
-├── Dockerfile            # Multi-stage Docker build
-├── pyproject.toml        # Project metadata and dependencies
-└── uv.lock              # Locked dependencies
+│   ├── integration/
+│   │   ├── test_books.py         # Book CRUD tests
+│   │   ├── test_books_auth.py    # Auth & RBAC tests
+│   │   ├── test_profile.py       # Profile endpoint tests
+│   │   └── test_stats.py         # Statistics tests
+│   ├── conftest.py               # Pytest fixtures (test DB, etc.)
+│   ├── test_database_config.py   # Database config tests
+│   ├── test_health.py            # Health check tests
+│   ├── test_models.py            # Model tests
+│   └── test_security.py          # Security & auth tests
+├── .env.example                  # Example environment variables
+├── .pre-commit-config.yaml       # Pre-commit hooks config
+├── alembic.ini                   # Alembic configuration
+├── Dockerfile                    # Multi-stage Docker build
+├── pyproject.toml                # Project metadata and dependencies
+├── start.sh                      # Production startup script
+└── uv.lock                       # Locked dependencies
 ```
+
+## Features
+
+### ✅ Minimum Requirements (Delivered)
+
+**1. Book Management API**
+- Create, read, update, delete books
+- Rich metadata support (title, author, ISBN, cover images, summaries)
+- Input validation and error handling
+
+**2. Check-in/Check-out System**
+- Borrow book endpoint with user tracking
+- Return book endpoint with validation
+- Status management (AVAILABLE/BORROWED)
+
+**3. Search & Filtering**
+- List all books endpoint
+- Query by ID
+- Frontend implements search by title/author
+
+### 🚀 Extra Features (Built Beyond Minimum)
+
+**1. Authentication & Authorization** 🔐
+- Supabase JWT token validation
+- Automatic user profile sync from auth.users
+- Token refresh handling
+- Secure password-less authentication
+
+**2. Role-Based Access Control (RBAC)** 👥
+- ADMIN and MEMBER roles
+- Hierarchical permission system
+- Protected endpoints with `require_role` decorator
+- Flexible permission inheritance
+
+**3. Real-time Statistics API** 📊
+- Book statistics endpoint
+- Aggregate counts (total, available, borrowed)
+- Optimized database queries
+
+**4. User-specific Borrowing** 📖
+- Track borrower UUID on books
+- User can only return own borrowed books
+- Admin override capability
+- Concurrency control with row-level locking
+
+**5. Database Seeding** 🌱
+- Production seeding script (100 books)
+- Development quick-seed (8 books)
+- Open Library API integration
+- Automatic seeding on first deployment
+- Idempotent and resumable
+
+**6. Professional Development Stack** 🛠️
+- Async/await throughout (AsyncSession, asyncpg)
+- SQLAlchemy 2.0+ with modern mapped_column syntax
+- Alembic migrations with version control
+- Comprehensive test suite with pytest
+- Strict linting with ruff
+- Pre-commit hooks
+
+**7. Production Ready** 🚀
+- CORS with wildcard support for dynamic deployments
+- Health check endpoint
+- Environment-based configuration
+- Docker multi-stage builds
+- Database connection pooling
+- Automatic migration runner
 
 ## API Endpoints
 
-- `GET /` - Root endpoint
-- `GET /health` - Health check endpoint
+### Health
+- `GET /` - Root endpoint (health check)
+- `GET /health` - Detailed health status
+
+### Books
+- `POST /books/` - Create a new book
+  - **Auth:** Required (ADMIN only)
+  - **Body:** `{ title, author, isbn?, cover_image?, summary? }`
+  - **Returns:** Created book with ID and timestamps
+
+- `GET /books/` - List all books
+  - **Auth:** None (public)
+  - **Returns:** Array of all books
+
+- `GET /books/{id}` - Get a specific book
+  - **Auth:** None (public)
+  - **Returns:** Book details or 404
+
+- `PUT /books/{id}` - Update a book
+  - **Auth:** Required (ADMIN only)
+  - **Body:** `{ title?, author?, isbn?, cover_image?, summary?, status? }`
+  - **Returns:** Updated book or 404
+
+- `DELETE /books/{id}` - Delete a book
+  - **Auth:** Required (ADMIN only)
+  - **Returns:** 204 No Content or 404
+
+- `PATCH /books/{id}/borrow` - Borrow a book
+  - **Auth:** Required (MEMBER or ADMIN)
+  - **Returns:** Updated book with borrowed status
+  - **Errors:** 400 if already borrowed, 404 if not found
+
+- `PATCH /books/{id}/return` - Return a book
+  - **Auth:** Required (MEMBER or ADMIN)
+  - **Returns:** Updated book with available status
+  - **Errors:** 400 if not borrowed or not borrower, 404 if not found
+  - **Note:** Members can only return their own books, admins can return any
+
+- `GET /books/stats` - Get book statistics
+  - **Auth:** None (public)
+  - **Returns:** `{ total, available, borrowed }`
+
+### Profile
+- `GET /profile` - Get current user's profile
+  - **Auth:** Required (MEMBER or ADMIN)
+  - **Returns:** `{ id, email, role, created_at }`
 
 ## Environment Variables
 
