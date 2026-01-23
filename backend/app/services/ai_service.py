@@ -16,6 +16,7 @@ from app.core.constants import (
     MINIMUM_SUMMARY_WORD_COUNT,
     OPENAI_MAX_TOKENS,
     OPENAI_MODEL,
+    OPENAI_REQUEST_TIMEOUT_SECONDS,
     OPENAI_TEMPERATURE,
     POOR_SUMMARY_INDICATORS,
 )
@@ -78,11 +79,36 @@ async def generate_book_summary(title: str, author: str, isbn: str | None) -> st
                     max_tokens=OPENAI_MAX_TOKENS,
                     temperature=OPENAI_TEMPERATURE,
                 )
-                return response.choices[0].message.content
 
-        summary = await asyncio.to_thread(_sync_call)
+                if not response:
+                    raise ValueError(f"Empty response from OpenRouter API. Raw response: {response}")
+
+                if not hasattr(response, "choices") or not response.choices:
+                    raise ValueError(f"Response missing 'choices' field or choices is empty. Raw response: {response}")
+
+                first_choice = response.choices[0]
+                if not hasattr(first_choice, "message"):
+                    raise ValueError(f"First choice missing 'message' field. Raw response: {response}")
+
+                message = first_choice.message
+                if not hasattr(message, "content"):
+                    raise ValueError(f"Message missing 'content' field. Raw response: {response}")
+
+                content = message.content
+                if content is None or (isinstance(content, str) and not content.strip()):
+                    raise ValueError(f"Message content is None or empty. Raw response: {response}")
+
+                return content
+
+        summary = await asyncio.wait_for(
+            asyncio.to_thread(_sync_call),
+            timeout=OPENAI_REQUEST_TIMEOUT_SECONDS,
+        )
         return summary
 
+    except asyncio.TimeoutError:
+        print(f"⚠️  Timeout: OpenRouter request exceeded {OPENAI_REQUEST_TIMEOUT_SECONDS}s")
+        return None
     except Exception as e:
         print(f"⚠️  API error: {e}")
         return None
