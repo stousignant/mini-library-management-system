@@ -14,7 +14,7 @@ from app.core.constants import (
     BOOK_COVER_IMAGE_MAX_LENGTH,
     BOOK_FIELD_MIN_LENGTH,
     BOOK_ISBN_MAX_LENGTH,
-    BOOK_SUMMARY_MAX_LENGTH,
+    BOOK_SUMMARY_VALIDATION_MAX_LENGTH,
     BOOK_TITLE_MAX_LENGTH,
 )
 from app.models.enums import BookStatus
@@ -27,7 +27,7 @@ class BookCreate(BaseModel):
     author: str = Field(..., min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_AUTHOR_MAX_LENGTH)
     isbn: str | None = Field(None, max_length=BOOK_ISBN_MAX_LENGTH)
     cover_image: str | None = Field(None, max_length=BOOK_COVER_IMAGE_MAX_LENGTH)
-    summary: str | None = Field(None, max_length=BOOK_SUMMARY_MAX_LENGTH)
+    summary: str | None = Field(None, max_length=BOOK_SUMMARY_VALIDATION_MAX_LENGTH)
 
 
 class BookUpdate(BaseModel):
@@ -37,7 +37,7 @@ class BookUpdate(BaseModel):
     author: str | None = Field(None, min_length=BOOK_FIELD_MIN_LENGTH, max_length=BOOK_AUTHOR_MAX_LENGTH)
     isbn: str | None = Field(None, max_length=BOOK_ISBN_MAX_LENGTH)
     cover_image: str | None = Field(None, max_length=BOOK_COVER_IMAGE_MAX_LENGTH)
-    summary: str | None = Field(None, max_length=BOOK_SUMMARY_MAX_LENGTH)
+    summary: str | None = Field(None, max_length=BOOK_SUMMARY_VALIDATION_MAX_LENGTH)
     status: BookStatus | None = None
 
 

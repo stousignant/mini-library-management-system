@@ -17,3 +17,7 @@ export const CONTENT_TYPE_JSON = 'application/json'
 
 // Polling Intervals (milliseconds)
 export const STATS_POLLING_INTERVAL_MS = 10000
+
+// Book Summary Validation
+export const BOOK_SUMMARY_MAX_LENGTH = 5000
+export const BOOK_SUMMARY_WARNING_THRESHOLD = 4500

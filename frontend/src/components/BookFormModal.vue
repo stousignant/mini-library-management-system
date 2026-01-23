@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import {
+  BOOK_SUMMARY_MAX_LENGTH,
+  BOOK_SUMMARY_WARNING_THRESHOLD,
+} from '@/constants/global'
 
 const props = defineProps<{
   isOpen: boolean
@@ -40,6 +44,26 @@ const summary = ref('')
 
 const isEditMode = computed(() => !!props.bookToEdit)
 
+const summaryLength = computed(() => summary.value.length)
+const isSummaryTooLong = computed(
+  () => summaryLength.value > BOOK_SUMMARY_MAX_LENGTH
+)
+const showSummaryWarning = computed(
+  () =>
+    summaryLength.value >= BOOK_SUMMARY_WARNING_THRESHOLD &&
+    !isSummaryTooLong.value
+)
+
+const summaryCharacterCountClass = computed(() => {
+  if (isSummaryTooLong.value) {
+    return 'text-destructive font-semibold'
+  }
+  if (showSummaryWarning.value) {
+    return 'text-yellow-600 dark:text-yellow-500'
+  }
+  return 'text-muted-foreground'
+})
+
 watch(
   () => props.bookToEdit,
   book => {
@@ -66,6 +90,10 @@ function resetForm() {
 
 function handleSubmit() {
   if (!title.value.trim() || !author.value.trim()) {
+    return
+  }
+
+  if (isSummaryTooLong.value) {
     return
   }
 
@@ -162,14 +190,30 @@ function handleOpenChange(open: boolean) {
           </div>
 
           <div class="space-y-2">
-            <Label for="summary">Summary</Label>
+            <div class="flex items-center justify-between">
+              <Label for="summary">Summary</Label>
+              <span :class="summaryCharacterCountClass" class="text-xs">
+                {{ summaryLength }} / {{ BOOK_SUMMARY_MAX_LENGTH }}
+              </span>
+            </div>
             <Textarea
               id="summary"
               v-model="summary"
-              rows="3"
+              rows="5"
+              :class="{ 'border-destructive': isSummaryTooLong }"
               placeholder="Brief description or publisher information"
               data-testid="summary-input"
             />
+            <p v-if="isSummaryTooLong" class="text-xs text-destructive">
+              Summary exceeds maximum length of {{ BOOK_SUMMARY_MAX_LENGTH }}
+              characters. Please shorten it.
+            </p>
+            <p
+              v-else-if="showSummaryWarning"
+              class="text-xs text-yellow-600 dark:text-yellow-500"
+            >
+              Approaching character limit
+            </p>
           </div>
         </div>
 
@@ -177,7 +221,11 @@ function handleOpenChange(open: boolean) {
           <Button type="button" variant="outline" @click="handleClose">
             Cancel
           </Button>
-          <Button type="submit" data-testid="submit-btn">
+          <Button
+            type="submit"
+            :disabled="isSummaryTooLong"
+            data-testid="submit-btn"
+          >
             {{ isEditMode ? 'Save Changes' : 'Add Book' }}
           </Button>
         </DialogFooter>

@@ -325,6 +325,96 @@ async def test_update_book_cover_and_summary(client, admin_token):
 
 
 @pytest.mark.asyncio
+async def test_create_book_with_long_summary(client, admin_token):
+    """
+    Test creating a book with a long summary (up to 5000 characters).
+
+    Given: Valid book data with a 5000-character summary
+    When: POST request is made to /books/
+    Then: Book is created with status 201
+    And: Response contains the full summary
+    """
+    # Arrange
+    long_summary = "A" * 5000
+    payload = {
+        "title": "Book with Long Summary",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+        "summary": long_summary,
+    }
+
+    # Act
+    response = await client.post("/books/", json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+
+    # Assert
+    assert response.status_code == 201
+    data = response.json()
+    assert data["summary"] == long_summary
+    assert len(data["summary"]) == 5000
+
+
+@pytest.mark.asyncio
+async def test_update_book_with_long_summary(client, admin_token):
+    """
+    Test updating a book with a long summary (up to 5000 characters).
+
+    Given: A book exists in the database
+    When: PUT request is made with a 5000-character summary
+    Then: Book is updated with status 200
+    And: Response contains the full summary
+    """
+    # Arrange - Create a book first
+    create_payload = {
+        "title": "Test Book",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+    }
+    create_response = await client.post(
+        "/books/", json=create_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    created_book = create_response.json()
+    book_id = created_book["id"]
+
+    # Act - Update with long summary
+    long_summary = "B" * 5000
+    update_payload = {"summary": long_summary}
+    response = await client.put(
+        f"/books/{book_id}", json=update_payload, headers={"Authorization": f"Bearer {admin_token}"}
+    )
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"] == long_summary
+    assert len(data["summary"]) == 5000
+
+
+@pytest.mark.asyncio
+async def test_reject_summary_exceeding_limit(client, admin_token):
+    """
+    Test that summaries exceeding 5000 characters are rejected.
+
+    Given: Valid book data with a 5001-character summary
+    When: POST request is made to /books/
+    Then: Request is rejected with status 422
+    """
+    # Arrange
+    too_long_summary = "A" * 5001
+    payload = {
+        "title": "Book with Too Long Summary",
+        "author": "Test Author",
+        "isbn": "978-0000000000",
+        "summary": too_long_summary,
+    }
+
+    # Act
+    response = await client.post("/books/", json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+
+    # Assert
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_delete_book(client, admin_token):
     """
     Test deleting a book via DELETE /books/{id}.
