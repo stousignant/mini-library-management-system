@@ -76,7 +76,7 @@ async def update_book_summaries(db: AsyncSession | None = None, test_mode: bool 
         print("-" * 60)
 
         updated_count = 0
-        skipped_count = 0
+        skipped_count = total_books - books_to_update_count
         failed_count = 0
 
         for index, book in enumerate(books_needing_update, 1):
