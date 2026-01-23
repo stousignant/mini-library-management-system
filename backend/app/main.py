@@ -25,6 +25,8 @@ logger.info(f"Environment: {settings.environment}")
 logger.info(f"Database host: {db_url.host}")
 logger.info(f"Database port: {db_url.port}")
 logger.info(f"Database name: {db_url.database}")
+logger.info(f"Supabase URL configured: {settings.supabase_url is not None}")
+logger.info(f"Supabase URL value: {settings.supabase_url if settings.supabase_url else 'NOT SET'}")
 
 app = FastAPI(
     title=APP_TITLE,

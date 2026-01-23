@@ -4,12 +4,16 @@ Application configuration management.
 Handles environment variables and application settings using Pydantic.
 """
 
+import logging
 import os
+from functools import lru_cache
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.constants import DEFAULT_CORS_ORIGINS, DEFAULT_TEST_DB_URL, TEST_JWT_SECRET
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -102,9 +106,18 @@ class Settings(BaseSettings):
         return self
 
 
+@lru_cache
 def get_settings() -> Settings:
-    """Get application settings instance."""
-    return Settings()
+    """Get application settings instance with caching to avoid multiple loads."""
+    logger.info(f"Loading settings from environment: ENVIRONMENT={os.getenv('ENVIRONMENT')}")
+    logger.info(f"SUPABASE_URL from os.getenv: {os.getenv('SUPABASE_URL', 'NOT SET')}")
+    logger.info(f"SUPABASE_JWT_SECRET from os.getenv: {'SET' if os.getenv('SUPABASE_JWT_SECRET') else 'NOT SET'}")
+
+    settings = Settings()
+    logger.info(f"Settings loaded - supabase_url: {settings.supabase_url if settings.supabase_url else 'NOT SET'}")
+    logger.info(f"Settings loaded - environment: {settings.environment}")
+
+    return settings
 
 
 def get_test_database_url() -> str:
