@@ -17,7 +17,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     watch: {
-      usePolling: true
+      usePolling:
+        process.env.VITE_USE_FILE_POLLING === 'true' ||
+        process.env.USE_FILE_POLLING === 'true',
+      interval: 1000
     }
   }
 })
