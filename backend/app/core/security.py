@@ -249,8 +249,11 @@ def require_role(required_role: UserRole):
     """
     Factory function to create role-checking dependency.
 
+    Uses hierarchical permissions where higher roles (e.g., ADMIN) automatically
+    have permissions of lower roles (e.g., MEMBER).
+
     Args:
-        required_role: Role required to access the endpoint
+        required_role: Minimum role required to access the endpoint
 
     Returns:
         Dependency function that checks user role
@@ -260,7 +263,7 @@ def require_role(required_role: UserRole):
     """
 
     async def role_checker(profile: Profile = Depends(get_current_user_with_role)) -> Profile:
-        if profile.role != required_role:
+        if not profile.role.has_permission(required_role):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ERROR_INSUFFICIENT_PERMISSIONS)
         return profile
 

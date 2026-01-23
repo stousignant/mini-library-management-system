@@ -219,7 +219,7 @@ class TestRequireRole:
         assert result == profile
 
     async def test_require_member_with_admin_user(self):
-        """Should allow access for admin user requiring member role."""
+        """Should allow access for admin user requiring member role (hierarchical permissions)."""
         from app.models.profile import Profile
 
         user_id = uuid.uuid4()
@@ -228,8 +228,6 @@ class TestRequireRole:
         )
 
         role_checker = require_role(UserRole.MEMBER)
+        result = await role_checker(profile)
 
-        with pytest.raises(HTTPException) as exc_info:
-            await role_checker(profile)
-
-        assert exc_info.value.status_code == 403
+        assert result == profile
