@@ -5,7 +5,7 @@ Handles JWT token verification, user authentication, and role-based access contr
 """
 
 import logging
-from functools import lru_cache
+import time
 from uuid import UUID
 
 import httpx
@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.constants import (
     ERROR_INSUFFICIENT_PERMISSIONS,
     ERROR_INVALID_TOKEN,
+    JWKS_CACHE_TTL_SECONDS,
     JWT_AUDIENCE_AUTHENTICATED,
     SUPABASE_JWKS_PATH,
 )
@@ -30,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = HTTPBearer()
 
+_jwks_cache = {"data": None, "timestamp": 0}
+
 
 def get_supabase_jwks_url() -> str:
     """Get Supabase JWKS URL from settings."""
@@ -39,25 +42,40 @@ def get_supabase_jwks_url() -> str:
     return f"{settings.supabase_url.rstrip('/')}{SUPABASE_JWKS_PATH}"
 
 
-@lru_cache(maxsize=1)
 def get_supabase_jwks() -> dict:
     """
-    Fetch JWKS (JSON Web Key Set) from Supabase.
+    Fetch JWKS (JSON Web Key Set) from Supabase with time-based cache.
 
-    Cached to avoid repeated HTTP requests.
+    Cache expires after JWKS_CACHE_TTL_SECONDS (default 1 hour) to handle
+    key rotation. If network fails but cached data exists, uses stale cache
+    as fallback.
 
     Returns:
         Dictionary of JWKS containing public keys
 
     Raises:
-        HTTPException: 500 if unable to fetch JWKS
+        HTTPException: 500 if unable to fetch JWKS and no cached data available
     """
+    current_time = time.time()
+
+    if _jwks_cache["data"] is not None and current_time - _jwks_cache["timestamp"] < JWKS_CACHE_TTL_SECONDS:
+        return _jwks_cache["data"]
+
     jwks_url = get_supabase_jwks_url()
     try:
         response = httpx.get(jwks_url, timeout=5.0)
         response.raise_for_status()
-        return response.json()
+        jwks = response.json()
+
+        _jwks_cache["data"] = jwks
+        _jwks_cache["timestamp"] = current_time
+
+        return jwks
     except Exception as e:
+        if _jwks_cache["data"] is not None:
+            logger.warning(f"JWKS fetch failed, using cached data: {e}")
+            return _jwks_cache["data"]
+
         logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch authentication keys"

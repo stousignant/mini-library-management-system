@@ -52,6 +52,7 @@ JWT_ALGORITHM = "HS256"
 JWT_AUDIENCE_AUTHENTICATED = "authenticated"
 JWT_TOKEN_TYPE_BEARER = "Bearer"
 SUPABASE_JWKS_PATH = "/auth/v1/.well-known/jwks.json"
+JWKS_CACHE_TTL_SECONDS = 3600
 
 # Error Messages
 ERROR_INVALID_TOKEN = "Could not validate credentials"
