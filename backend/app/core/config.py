@@ -65,7 +65,7 @@ class Settings(BaseSettings):
         if self.database_url is not None:
             return self
 
-        if self.environment == "local":
+        if self.environment in ("local", "test"):
             self.database_url = os.getenv("LOCAL_DATABASE_URL", DEFAULT_TEST_DB_URL)
         elif self.environment == "development":
             self.database_url = os.getenv("DEV_DATABASE_URL", "")
