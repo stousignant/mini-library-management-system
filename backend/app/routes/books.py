@@ -146,7 +146,7 @@ async def borrow_book(
     current_user: Profile = Depends(get_current_user_with_role),
 ) -> Book:
     """
-    Mark a book as borrowed.
+    Mark a book as borrowed by the authenticated user.
 
     Args:
         book_id: ID of the book to borrow
@@ -161,7 +161,7 @@ async def borrow_book(
         HTTPException: 400 if book is already borrowed
     """
     try:
-        book = await book_service.borrow_book(db, book_id)
+        book = await book_service.borrow_book(db, book_id, current_user.id)
         if book is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -184,6 +184,8 @@ async def return_book(
     """
     Mark a book as returned (available).
 
+    Users can only return books they borrowed. Admins can return any book.
+
     Args:
         book_id: ID of the book to return
         db: Database session
@@ -194,10 +196,10 @@ async def return_book(
 
     Raises:
         HTTPException: 404 if book not found
-        HTTPException: 400 if book is not borrowed
+        HTTPException: 400 if book is not borrowed or user is not the borrower
     """
     try:
-        book = await book_service.return_book(db, book_id)
+        book = await book_service.return_book(db, book_id, current_user.id)
         if book is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

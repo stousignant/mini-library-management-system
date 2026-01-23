@@ -5,8 +5,9 @@ Defines the database schema for books in the library system.
 """
 
 from datetime import datetime, timezone
+from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, String
+from sqlalchemy import DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.constants import (
@@ -34,6 +35,10 @@ class Book(Base):
     status: Mapped[BookStatus] = mapped_column(
         Enum(BookStatus, native_enum=False),
         nullable=False,
+    )
+    borrowed_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("profiles.id"),
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

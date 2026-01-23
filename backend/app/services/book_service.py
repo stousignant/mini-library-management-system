@@ -4,6 +4,8 @@ Book service layer.
 Handles business logic and database operations for books.
 """
 
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -116,13 +118,14 @@ async def delete_book(db: AsyncSession, book_id: int) -> bool:
     return True
 
 
-async def borrow_book(db: AsyncSession, book_id: int) -> Book | None:
+async def borrow_book(db: AsyncSession, book_id: int, user_id: UUID) -> Book | None:
     """
-    Mark a book as borrowed.
+    Mark a book as borrowed by a specific user.
 
     Args:
         db: Database session
         book_id: ID of the book to borrow
+        user_id: ID of the user borrowing the book
 
     Returns:
         Updated book entity if found and available, None otherwise
@@ -138,25 +141,27 @@ async def borrow_book(db: AsyncSession, book_id: int) -> Book | None:
         raise ValueError("Book is already borrowed")
 
     book.status = BookStatus.BORROWED
+    book.borrowed_by = user_id
     await db.commit()
     await db.refresh(book)
 
     return book
 
 
-async def return_book(db: AsyncSession, book_id: int) -> Book | None:
+async def return_book(db: AsyncSession, book_id: int, user_id: UUID | None = None) -> Book | None:
     """
     Mark a book as returned (available).
 
     Args:
         db: Database session
         book_id: ID of the book to return
+        user_id: Optional ID of the user returning the book (for verification)
 
     Returns:
         Updated book entity if found and borrowed, None otherwise
 
     Raises:
-        ValueError: If book is not borrowed
+        ValueError: If book is not borrowed or user is not the borrower
     """
     book = await get_book_by_id(db, book_id)
     if book is None:
@@ -165,7 +170,11 @@ async def return_book(db: AsyncSession, book_id: int) -> Book | None:
     if book.status == BookStatus.AVAILABLE:
         raise ValueError("Book is not borrowed")
 
+    if user_id is not None and book.borrowed_by != user_id:
+        raise ValueError("You can only return books you borrowed")
+
     book.status = BookStatus.AVAILABLE
+    book.borrowed_by = None
     await db.commit()
     await db.refresh(book)
 

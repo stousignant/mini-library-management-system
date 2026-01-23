@@ -5,6 +5,7 @@ Defines request and response models for book operations.
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -50,6 +51,7 @@ class BookResponse(BaseModel):
     cover_image: str | None
     summary: str | None
     status: BookStatus
+    borrowed_by: UUID | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
