@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = HTTPBearer()
 
+SUPABASE_JWKS_URL = "https://lmchwrrswvllapfhohnb.supabase.co/auth/v1/.well-known/jwks.json"
+
 
 @lru_cache(maxsize=1)
 def get_supabase_jwks() -> dict:
@@ -38,17 +40,17 @@ def get_supabase_jwks() -> dict:
     Cached to avoid repeated HTTP requests.
 
     Returns:
-        Dictionary of JWKS keys
-    """
-    supabase_url = "https://lmchwrrswvllapfhohnb.supabase.co"
-    jwks_url = f"{supabase_url}/.well-known/jwks.json"
+        Dictionary of JWKS containing public keys
 
+    Raises:
+        HTTPException: 500 if unable to fetch JWKS
+    """
     try:
-        response = httpx.get(jwks_url, timeout=5.0)
+        response = httpx.get(SUPABASE_JWKS_URL, timeout=5.0)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        logger.error(f"Failed to fetch JWKS: {e}")
+        logger.error(f"Failed to fetch JWKS from {SUPABASE_JWKS_URL}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch authentication keys"
         )
@@ -62,22 +64,29 @@ def get_signing_key(token: str) -> str:
         token: JWT token string
 
     Returns:
-        Public key string for verification
+        Public key constructed from JWK
+
+    Raises:
+        HTTPException: 401 if unable to find matching key
     """
     try:
         unverified_header = jwt.get_unverified_header(token)
         kid = unverified_header.get("kid")
 
         if not kid:
+            logger.error("Token missing key ID (kid)")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing key ID")
 
         jwks = get_supabase_jwks()
 
         for key in jwks.get("keys", []):
             if key.get("kid") == kid:
-                return jwk.construct(key).to_pem().decode("utf-8")
+                return jwk.construct(key)
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find appropriate key")
+        logger.error(f"No matching key found for kid: {kid}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find matching signing key")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting signing key: {e}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
@@ -85,10 +94,10 @@ def get_signing_key(token: str) -> str:
 
 def decode_jwt_token(token: str) -> dict:
     """
-    Decode and validate JWT token from Supabase.
+    Decode and validate JWT token with ES256 or HS256 algorithm.
 
-    TODO: Implement proper ES256 signature verification with Supabase public key.
-    Currently signature verification is disabled for local development.
+    For production: Fetches ES256 public key from Supabase's JWKS endpoint.
+    For testing: Falls back to HS256 with JWT secret if ES256 verification fails.
 
     Args:
         token: JWT token string
@@ -97,19 +106,36 @@ def decode_jwt_token(token: str) -> dict:
         Decoded token payload
 
     Raises:
-        HTTPException: 401 if token is invalid, expired, or has wrong audience
+        HTTPException: 401 if token is invalid, expired, or signature verification fails
     """
     try:
+        public_key = get_signing_key(token)
+
         payload = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256", "ES256", "RS256"],
-            options={"verify_aud": False, "verify_signature": False},
+            public_key,
+            algorithms=["ES256"],
+            options={"verify_aud": False},
         )
-        logger.info(f"JWT decoded successfully for user: {payload.get('email')}")
+        logger.info(f"JWT verified (ES256) for user: {payload.get('email')}")
         return payload
+    except HTTPException as e:
+        if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
+            raise
+        try:
+            payload = jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
+            logger.info(f"JWT verified (HS256) for user: {payload.get('email')}")
+            return payload
+        except JWTError as e2:
+            logger.error(f"JWT verification failed (both ES256 and HS256): {type(e2).__name__}: {str(e2)}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
     except JWTError as e:
-        logger.error(f"JWT decode error: {type(e).__name__}: {str(e)}")
+        logger.error(f"JWT verification failed: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
 
 
