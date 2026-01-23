@@ -6,10 +6,10 @@ Handles environment variables and application settings using Pydantic.
 
 import os
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.constants import DEFAULT_CORS_ORIGINS, DEFAULT_TEST_DB_URL
+from app.core.constants import DEFAULT_CORS_ORIGINS, DEFAULT_TEST_DB_URL, TEST_JWT_SECRET
 
 
 class Settings(BaseSettings):
@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     environment: str = "development"
     pythonunbuffered: str = "1"
+    supabase_jwt_secret: str | None = None
+    supabase_url: str | None = None
+    supabase_anon_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -26,13 +29,43 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @field_validator("supabase_jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, v: str | None) -> str | None:
+        """Ensure JWT secret is not a placeholder and meets minimum length."""
+        if v is None:
+            return v
+
+        if v == TEST_JWT_SECRET:
+            return v
+
+        placeholder_values = [
+            "your-jwt-secret-from-supabase-dashboard",
+            "your_jwt_secret_here",
+            "changeme",
+        ]
+
+        if not v:
+            raise ValueError("SUPABASE_JWT_SECRET must not be empty")
+
+        if v.lower() in [p.lower() for p in placeholder_values]:
+            raise ValueError(
+                "SUPABASE_JWT_SECRET must be set to a valid JWT secret. "
+                "Get it from Supabase Dashboard > Settings > API > JWT Secret"
+            )
+
+        if len(v) < 32:
+            raise ValueError("SUPABASE_JWT_SECRET must be at least 32 characters for security")
+
+        return v
+
     @model_validator(mode="after")
     def set_database_url(self) -> "Settings":
         """Set database URL based on environment if not explicitly provided."""
         if self.database_url is not None:
             return self
 
-        if self.environment == "local":
+        if self.environment in ("local", "test"):
             self.database_url = os.getenv("LOCAL_DATABASE_URL", DEFAULT_TEST_DB_URL)
         elif self.environment == "development":
             self.database_url = os.getenv("DEV_DATABASE_URL", "")
@@ -49,6 +82,22 @@ class Settings(BaseSettings):
             self.database_url = os.getenv("DEV_DATABASE_URL", "")
             if not self.database_url:
                 raise ValueError(f"Database URL must be set for environment: {self.environment}")
+
+        return self
+
+    @model_validator(mode="after")
+    def set_jwt_secret(self) -> "Settings":
+        """Set JWT secret based on environment if not explicitly provided."""
+        if self.supabase_jwt_secret is not None:
+            return self
+
+        if self.environment in ("local", "test"):
+            self.supabase_jwt_secret = TEST_JWT_SECRET
+        else:
+            raise ValueError(
+                f"SUPABASE_JWT_SECRET environment variable must be set for {self.environment} environment. "
+                "Get it from Supabase Dashboard > Settings > API > JWT Secret"
+            )
 
         return self
 

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
@@ -16,6 +16,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,vue,js,json,css}\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.91.0",
     "axios": "^1.6.5",
     "pinia": "^2.1.7",
     "vue": "^3.4.0"

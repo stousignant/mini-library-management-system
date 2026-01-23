@@ -2,6 +2,7 @@
 import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import { useBookStore } from '@/stores/bookStore'
+import { useAuthStore } from '@/stores/authStore'
 
 const props = defineProps<{
   book: Book
@@ -13,6 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const bookStore = useBookStore()
+const authStore = useAuthStore()
 
 const getStatusColor = (status: BookStatus) => {
   return status === BookStatus.Available
@@ -147,6 +149,7 @@ function handleImageError(event: globalThis.Event) {
 
       <div class="mt-auto pt-3 border-t border-gray-100 space-y-2">
         <button
+          v-if="authStore.isAuthenticated"
           :class="getButtonClass(book.status)"
           class="w-full text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
           data-testid="toggle-status-btn"
@@ -155,7 +158,7 @@ function handleImageError(event: globalThis.Event) {
           {{ getButtonLabel(book.status) }}
         </button>
 
-        <div class="flex gap-2">
+        <div v-if="authStore.isAdmin" class="flex gap-2">
           <button
             class="flex-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
             data-testid="edit-btn"

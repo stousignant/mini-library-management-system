@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useBookStore } from '@/stores/bookStore'
+import { useAuthStore } from '@/stores/authStore'
 import BookCard from './BookCard.vue'
 import BookFormModal from './BookFormModal.vue'
 import type { Book } from '@/types/Book'
 
 const bookStore = useBookStore()
+const authStore = useAuthStore()
 const isModalOpen = ref(false)
 const bookToEdit = ref<Book | undefined>(undefined)
 
@@ -98,6 +100,7 @@ async function handleDelete(bookId: number) {
           data-testid="search-input"
         />
         <button
+          v-if="authStore.isAdmin"
           class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
           data-testid="add-book-btn"
           @click="openAddModal"

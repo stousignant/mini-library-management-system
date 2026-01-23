@@ -80,8 +80,9 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
         env:
-          ENVIRONMENT: local
+          ENVIRONMENT: test
           TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/library_test
+          SUPABASE_JWT_SECRET: test-jwt-secret-for-local-development-and-ci-testing-minimum-32-chars
 
   frontend-lint:
     name: Frontend Linting
@@ -130,3 +131,6 @@ jobs:
 
       - name: Run tests
         run: npm test -- --run
+        env:
+          VITE_SUPABASE_URL: https://test-project.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0

@@ -1,0 +1,335 @@
+"""
+Authentication and authorization utilities.
+
+Handles JWT token verification, user authentication, and role-based access control.
+"""
+
+import logging
+import re
+import time
+from uuid import UUID
+
+import httpx
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwk, jwt
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.core.constants import (
+    ERROR_INSUFFICIENT_PERMISSIONS,
+    ERROR_INVALID_TOKEN,
+    JWKS_CACHE_TTL_SECONDS,
+    JWT_AUDIENCE_AUTHENTICATED,
+    SUPABASE_JWKS_PATH,
+)
+from app.core.database import get_db
+from app.models.enums import UserRole
+from app.models.profile import Profile
+
+logger = logging.getLogger(__name__)
+
+oauth2_scheme = HTTPBearer()
+
+_jwks_cache = {"data": None, "timestamp": 0}
+
+
+def get_supabase_jwks_url() -> str:
+    """Get Supabase JWKS URL from settings."""
+    settings = get_settings()
+    if not settings.supabase_url:
+        raise ValueError("SUPABASE_URL must be set in environment variables")
+    return f"{settings.supabase_url.rstrip('/')}{SUPABASE_JWKS_PATH}"
+
+
+def get_supabase_jwks() -> dict:
+    """
+    Fetch JWKS (JSON Web Key Set) from Supabase with time-based cache.
+
+    Cache expires after JWKS_CACHE_TTL_SECONDS (default 1 hour) to handle
+    key rotation. If network fails but cached data exists, uses stale cache
+    as fallback.
+
+    Returns:
+        Dictionary of JWKS containing public keys
+
+    Raises:
+        HTTPException: 500 if unable to fetch JWKS and no cached data available
+    """
+    current_time = time.time()
+
+    if _jwks_cache["data"] is not None and current_time - _jwks_cache["timestamp"] < JWKS_CACHE_TTL_SECONDS:
+        return _jwks_cache["data"]
+
+    jwks_url = get_supabase_jwks_url()
+    try:
+        response = httpx.get(jwks_url, timeout=5.0)
+        response.raise_for_status()
+        jwks = response.json()
+
+        _jwks_cache["data"] = jwks
+        _jwks_cache["timestamp"] = current_time
+
+        return jwks
+    except Exception as e:
+        if _jwks_cache["data"] is not None:
+            logger.warning(f"JWKS fetch failed, using cached data: {e}")
+            return _jwks_cache["data"]
+
+        logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch authentication keys"
+        )
+
+
+def find_jwk_by_kid(jwks: dict, kid: str) -> dict | None:
+    """
+    Find JWK by key ID.
+
+    Args:
+        jwks: JWKS dictionary containing keys
+        kid: Key ID to search for
+
+    Returns:
+        JWK dictionary if found, None otherwise
+    """
+    return next((key for key in jwks.get("keys", []) if key.get("kid") == kid), None)
+
+
+def get_signing_key(token: str) -> str:
+    """
+    Get the public key for verifying JWT token signature.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Public key constructed from JWK
+
+    Raises:
+        HTTPException: 401 if unable to find matching key
+    """
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get("kid")
+
+        if not kid:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing key ID")
+
+        jwks = get_supabase_jwks()
+        jwk_data = find_jwk_by_kid(jwks, kid)
+
+        if not jwk_data:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unable to find matching signing key")
+
+        return jwk.construct(jwk_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting signing key: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
+
+
+def decode_jwt_token(token: str) -> dict:
+    """
+    Decode and validate JWT token with ES256 or HS256 algorithm.
+
+    In test environment: Uses HS256 with JWT secret for test tokens.
+    In production: Strictly uses ES256 with public keys from JWKS endpoint.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Decoded token payload
+
+    Raises:
+        HTTPException: 401 if token is invalid, expired, or signature verification fails
+    """
+    settings = get_settings()
+    if settings.environment == "test":
+        try:
+            payload = jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience=JWT_AUDIENCE_AUTHENTICATED,
+                options={"verify_aud": True},
+            )
+            logger.info(f"JWT verified (HS256/test) for user_id: {payload.get('sub')}")
+            return payload
+        except JWTError as e:
+            logger.error(f"JWT verification failed: {type(e).__name__}: {str(e)}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
+
+    try:
+        public_key = get_signing_key(token)
+
+        payload = jwt.decode(
+            token,
+            public_key,
+            algorithms=["ES256"],
+            audience=JWT_AUDIENCE_AUTHENTICATED,
+            options={"verify_aud": True},
+        )
+        logger.info(f"JWT verified (ES256) for user_id: {payload.get('sub')}")
+        return payload
+    except HTTPException:
+        raise
+    except JWTError as e:
+        logger.error(f"JWT verification failed: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_INVALID_TOKEN)
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)) -> dict:
+    """
+    Extract and validate current user from JWT token.
+
+    Args:
+        credentials: HTTP Bearer token credentials
+
+    Returns:
+        User payload from decoded token
+
+    Raises:
+        HTTPException: 401 if token is invalid
+    """
+    token = credentials.credentials
+    return decode_jwt_token(token)
+
+
+def validate_email(email: str) -> str:
+    """
+    Validate email format.
+
+    Args:
+        email: Email address to validate
+
+    Returns:
+        Validated email address
+
+    Raises:
+        HTTPException: 400 if email format is invalid
+    """
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found in token")
+
+    email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(email_pattern, email):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format in token")
+
+    return email
+
+
+def detect_role_from_jwt(user_payload: dict) -> UserRole:
+    """
+    Detect user role from Supabase JWT token payload.
+
+    Checks multiple fields to determine if user should be admin:
+    - 'role' field: 'service_role' or 'ADMIN' indicates Supabase admin
+    - 'user_metadata' or 'app_metadata': custom role field
+
+    Args:
+        user_payload: Decoded JWT token payload
+
+    Returns:
+        UserRole.ADMIN if admin indicators found, otherwise UserRole.MEMBER
+    """
+    supabase_role = user_payload.get("role", "")
+    if supabase_role.lower() in ("service_role", "admin"):
+        logger.info(f"Admin user detected via role '{supabase_role}': {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    user_metadata = user_payload.get("user_metadata", {})
+    app_metadata = user_payload.get("app_metadata", {})
+
+    metadata_role = user_metadata.get("role") or app_metadata.get("role")
+    if metadata_role and metadata_role.upper() == "ADMIN":
+        logger.info(f"Admin user detected via metadata: {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    is_admin = user_metadata.get("is_admin") or app_metadata.get("is_admin")
+    if is_admin:
+        logger.info(f"Admin user detected via is_admin flag: {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    return UserRole.MEMBER
+
+
+async def get_current_user_with_role(
+    user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> Profile:
+    """
+    Fetch user profile with role from database.
+
+    If profile doesn't exist, creates it automatically with role detected from
+    Supabase JWT token (ADMIN if Supabase admin, otherwise MEMBER).
+    The database is the source of truth for roles once created.
+    Handles race conditions where multiple requests try to create the same
+    profile simultaneously. Validates email format before creating profile.
+
+    Args:
+        user: User payload from JWT token
+        db: Database session
+
+    Returns:
+        User profile with role information
+
+    Raises:
+        HTTPException: 400 if email is invalid
+        HTTPException: 500 if unable to fetch or create profile
+    """
+    user_id = UUID(user["sub"])
+    raw_email = user.get("email")
+    email = validate_email(raw_email)
+
+    result = await db.execute(select(Profile).where(Profile.id == user_id))
+    profile = result.scalar_one_or_none()
+
+    if profile is None:
+        try:
+            detected_role = detect_role_from_jwt(user)
+            profile = Profile(id=user_id, email=email, role=detected_role)
+            db.add(profile)
+            await db.commit()
+            await db.refresh(profile)
+            logger.info(f"Created profile for {email} with role {detected_role.value}")
+        except IntegrityError:
+            await db.rollback()
+            result = await db.execute(select(Profile).where(Profile.id == user_id))
+            profile = result.scalar_one_or_none()
+
+            if profile is None:
+                logger.error(f"Failed to create or fetch profile for user_id: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user profile"
+                )
+
+    return profile
+
+
+def require_role(required_role: UserRole):
+    """
+    Factory function to create role-checking dependency.
+
+    Uses hierarchical permissions where higher roles (e.g., ADMIN) automatically
+    have permissions of lower roles (e.g., MEMBER).
+
+    Args:
+        required_role: Minimum role required to access the endpoint
+
+    Returns:
+        Dependency function that checks user role
+
+    Raises:
+        HTTPException: 403 if user lacks required role
+    """
+
+    async def role_checker(profile: Profile = Depends(get_current_user_with_role)) -> Profile:
+        if not profile.role.has_permission(required_role):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ERROR_INSUFFICIENT_PERMISSIONS)
+        return profile
+
+    return role_checker

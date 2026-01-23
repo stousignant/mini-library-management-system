@@ -41,15 +41,13 @@ export const useBookStore = defineStore('book', () => {
     if (!book) return
 
     const originalStatus = book.status
-    const newStatus =
-      originalStatus === BookStatus.Available
-        ? BookStatus.Borrowed
-        : BookStatus.Available
+    const isBorrowing = originalStatus === BookStatus.Available
+    const endpoint = isBorrowing ? 'borrow' : 'return'
 
-    book.status = newStatus
+    book.status = isBorrowing ? BookStatus.Borrowed : BookStatus.Available
 
     try {
-      await apiClient.put(`/books/${bookId}`, { status: newStatus })
+      await apiClient.patch(`/books/${bookId}/${endpoint}`)
     } catch (_err) {
       book.status = originalStatus
       error.value = 'Failed to update book status'

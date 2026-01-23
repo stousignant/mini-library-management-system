@@ -19,4 +19,4 @@ def test_health_endpoint():
     assert "database" in data
     assert "environment" in data
     assert data["database"] in ["connected", "unknown"] or data["database"].startswith("error:")
-    assert data["environment"] in ["local", "development", "production"]
+    assert data["environment"] in ["test", "local", "development", "production"]

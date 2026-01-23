@@ -47,6 +47,19 @@ CORS_ALLOW_ALL_HEADERS = ["*"]
 OPEN_LIBRARY_API_BASE_URL = "https://openlibrary.org"
 OPEN_LIBRARY_COVERS_BASE_URL = "https://covers.openlibrary.org"
 
+# JWT Configuration
+JWT_ALGORITHM = "HS256"
+JWT_AUDIENCE_AUTHENTICATED = "authenticated"
+JWT_TOKEN_TYPE_BEARER = "Bearer"
+SUPABASE_JWKS_PATH = "/auth/v1/.well-known/jwks.json"
+JWKS_CACHE_TTL_SECONDS = 3600
+TEST_JWT_SECRET = "test-jwt-secret-for-local-development-and-ci-testing-minimum-32-chars"
+
+# Error Messages
+ERROR_INVALID_TOKEN = "Could not validate credentials"
+ERROR_INSUFFICIENT_PERMISSIONS = "Insufficient permissions"
+ERROR_USER_NOT_FOUND = "User profile not found"
+
 # Seed Data Configuration - 100 Curated Books by Genre
 SEED_BOOK_ISBNS = [
     # Programming & Tech (20 books)

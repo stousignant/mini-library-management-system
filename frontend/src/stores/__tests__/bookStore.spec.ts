@@ -232,13 +232,11 @@ describe('bookStore', () => {
         },
       ]
 
-      vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
+      vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: {} })
 
       await store.toggleStatus(1)
 
-      expect(apiClient.put).toHaveBeenCalledWith('/books/1', {
-        status: BookStatus.Borrowed,
-      })
+      expect(apiClient.patch).toHaveBeenCalledWith('/books/1/borrow')
       expect(store.books[0].status).toBe(BookStatus.Borrowed)
       expect(store.error).toBeNull()
     })
@@ -259,13 +257,11 @@ describe('bookStore', () => {
         },
       ]
 
-      vi.mocked(apiClient.put).mockResolvedValueOnce({ data: {} })
+      vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: {} })
 
       await store.toggleStatus(1)
 
-      expect(apiClient.put).toHaveBeenCalledWith('/books/1', {
-        status: BookStatus.Available,
-      })
+      expect(apiClient.patch).toHaveBeenCalledWith('/books/1/return')
       expect(store.books[0].status).toBe(BookStatus.Available)
       expect(store.error).toBeNull()
     })
@@ -286,7 +282,9 @@ describe('bookStore', () => {
         },
       ]
 
-      vi.mocked(apiClient.put).mockRejectedValueOnce(new Error('Network error'))
+      vi.mocked(apiClient.patch).mockRejectedValueOnce(
+        new Error('Network error')
+      )
 
       await store.toggleStatus(1)
 
