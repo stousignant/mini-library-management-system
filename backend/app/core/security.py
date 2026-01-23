@@ -13,6 +13,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwk, jwt
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -193,6 +194,8 @@ async def get_current_user_with_role(
     Fetch user profile with role from database.
 
     If profile doesn't exist, creates it automatically with MEMBER role.
+    Handles race conditions where multiple requests try to create the same
+    profile simultaneously.
 
     Args:
         user: User payload from JWT token
@@ -200,6 +203,9 @@ async def get_current_user_with_role(
 
     Returns:
         User profile with role information
+
+    Raises:
+        HTTPException: 500 if unable to fetch or create profile
     """
     user_id = UUID(user["sub"])
     email = user.get("email")
@@ -208,10 +214,21 @@ async def get_current_user_with_role(
     profile = result.scalar_one_or_none()
 
     if profile is None:
-        profile = Profile(id=user_id, email=email, role=UserRole.MEMBER)
-        db.add(profile)
-        await db.commit()
-        await db.refresh(profile)
+        try:
+            profile = Profile(id=user_id, email=email, role=UserRole.MEMBER)
+            db.add(profile)
+            await db.commit()
+            await db.refresh(profile)
+        except IntegrityError:
+            await db.rollback()
+            result = await db.execute(select(Profile).where(Profile.id == user_id))
+            profile = result.scalar_one_or_none()
+
+            if profile is None:
+                logger.error(f"Failed to create or fetch profile for user_id: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user profile"
+                )
 
     return profile
 
