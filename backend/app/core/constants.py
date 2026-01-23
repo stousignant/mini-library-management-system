@@ -46,6 +46,8 @@ CORS_ALLOW_ALL_HEADERS = ["*"]
 # Open Library API Configuration
 OPEN_LIBRARY_API_BASE_URL = "https://openlibrary.org"
 OPEN_LIBRARY_COVERS_BASE_URL = "https://covers.openlibrary.org"
+OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS = 1.2
+OPEN_LIBRARY_REQUEST_TIMEOUT_SECONDS = 15.0
 
 # JWT Configuration
 JWT_ALGORITHM = "HS256"

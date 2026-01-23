@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [book: Book]
   delete: [bookId: number]
+  viewDetails: [book: Book]
 }>()
 
 const bookStore = useBookStore()
@@ -70,7 +71,11 @@ function handleImageError(event: globalThis.Event) {
 </script>
 
 <template>
-  <Card :data-testid="`book-item-${book.id}`" class="flex flex-col h-[660px]">
+  <Card
+    :data-testid="`book-item-${book.id}`"
+    class="flex flex-col h-[660px] cursor-pointer transition-transform hover:scale-105"
+    @click="emit('viewDetails', book)"
+  >
     <div class="relative w-full h-64 bg-muted">
       <div
         v-if="book.cover_image"
@@ -146,7 +151,7 @@ function handleImageError(event: globalThis.Event) {
         :variant="getButtonVariant(book.status)"
         class="w-full"
         data-testid="toggle-status-btn"
-        @click="bookStore.toggleStatus(book.id)"
+        @click.stop="bookStore.toggleStatus(book.id)"
       >
         {{ getButtonLabel(book.status) }}
       </Button>
@@ -156,7 +161,7 @@ function handleImageError(event: globalThis.Event) {
           variant="outline"
           class="flex-1"
           data-testid="edit-btn"
-          @click="emit('edit', book)"
+          @click.stop="emit('edit', book)"
         >
           Edit
         </Button>
@@ -164,7 +169,7 @@ function handleImageError(event: globalThis.Event) {
           variant="outline"
           class="flex-1 text-destructive hover:text-destructive"
           data-testid="delete-btn"
-          @click="handleDelete"
+          @click.stop="handleDelete"
         >
           Delete
         </Button>

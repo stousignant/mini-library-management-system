@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useStatsStore } from '@/stores/statsStore'
 import BookCard from './BookCard.vue'
 import BookFormModal from './BookFormModal.vue'
+import BookDetailModal from './BookDetailModal.vue'
 import type { Book } from '@/types/Book'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,8 @@ const authStore = useAuthStore()
 const statsStore = useStatsStore()
 const isModalOpen = ref(false)
 const bookToEdit = ref<Book | undefined>(undefined)
+const isDetailModalOpen = ref(false)
+const bookToView = ref<Book | null>(null)
 
 // Watch for auth user changes and update filterUserId
 watch(
@@ -63,6 +66,16 @@ function openEditModal(book: Book) {
 function closeModal() {
   isModalOpen.value = false
   bookToEdit.value = undefined
+}
+
+function openDetailModal(book: Book) {
+  bookToView.value = book
+  isDetailModalOpen.value = true
+}
+
+function closeDetailModal() {
+  isDetailModalOpen.value = false
+  bookToView.value = null
 }
 
 async function handleSubmit(data: {
@@ -285,6 +298,7 @@ async function handleDelete(bookId: number) {
           :book="book"
           @edit="openEditModal"
           @delete="handleDelete"
+          @view-details="openDetailModal"
         />
       </div>
     </div>
@@ -294,6 +308,12 @@ async function handleDelete(bookId: number) {
       :book-to-edit="bookToEdit"
       @close="closeModal"
       @submit="handleSubmit"
+    />
+
+    <BookDetailModal
+      :is-open="isDetailModalOpen"
+      :book="bookToView"
+      @close="closeDetailModal"
     />
   </div>
 </template>

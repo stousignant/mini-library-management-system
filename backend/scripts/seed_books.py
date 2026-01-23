@@ -13,7 +13,12 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.core.constants import OPEN_LIBRARY_API_BASE_URL, SEED_BOOK_ISBNS
+from app.core.constants import (
+    OPEN_LIBRARY_API_BASE_URL,
+    OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS,
+    OPEN_LIBRARY_REQUEST_TIMEOUT_SECONDS,
+    SEED_BOOK_ISBNS,
+)
 from app.core.database import AsyncSessionLocal
 from app.models.book import Book
 from app.models.enums import BookStatus
@@ -32,7 +37,7 @@ async def fetch_book_metadata(isbn: str) -> dict | None:
     url = f"{OPEN_LIBRARY_API_BASE_URL}/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=OPEN_LIBRARY_REQUEST_TIMEOUT_SECONDS) as client:
             response = await client.get(url)
             response.raise_for_status()
 
@@ -81,27 +86,33 @@ async def seed_database() -> None:
 
     async with AsyncSessionLocal() as db:
         try:
-            tasks = [fetch_book_metadata(isbn) for isbn in SEED_BOOK_ISBNS]
-            books_data = await asyncio.gather(*tasks)
-
             created_count = 0
             skipped_count = 0
+            total_isbns = len(SEED_BOOK_ISBNS)
 
-            for book_data in books_data:
+            for index, isbn in enumerate(SEED_BOOK_ISBNS, 1):
+                print(f"   [{index}/{total_isbns}] Fetching ISBN {isbn}...")
+
+                book_data = await fetch_book_metadata(isbn)
+
                 if book_data is None:
                     skipped_count += 1
+                    await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
                     continue
 
                 existing_book = await db.execute(Book.__table__.select().where(Book.isbn == book_data["isbn"]))
                 if existing_book.scalar_one_or_none():
                     print(f"   ⏭️  Skipped: {book_data['title']} (already exists)")
                     skipped_count += 1
+                    await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
                     continue
 
                 book = Book(**book_data)
                 db.add(book)
                 print(f"   ✅ Added: {book_data['title']} by {book_data['author']}")
                 created_count += 1
+
+                await asyncio.sleep(OPEN_LIBRARY_RATE_LIMIT_DELAY_SECONDS)
 
             await db.commit()
 
