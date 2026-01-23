@@ -126,6 +126,21 @@ describe('authStore', () => {
     })
   })
 
+  it('signInWithGoogle calls Supabase OAuth', async () => {
+    const authStore = useAuthStore()
+
+    mockSupabase.auth.signInWithOAuth.mockResolvedValue({
+      data: { provider: 'google', url: 'https://accounts.google.com/signin' },
+      error: null,
+    })
+
+    await authStore.signInWithGoogle()
+
+    expect(mockSupabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+    })
+  })
+
   it('signOut clears session and user', async () => {
     const authStore = useAuthStore()
 

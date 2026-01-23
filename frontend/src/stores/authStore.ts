@@ -66,12 +66,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function signInWithGithub() {
+  async function signInWithOAuth(provider: 'github' | 'google') {
     loading.value = true
     error.value = null
+    const providerName = provider.charAt(0).toUpperCase() + provider.slice(1)
+
     try {
       const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
+        provider,
       })
 
       if (authError) {
@@ -80,13 +82,21 @@ export const useAuthStore = defineStore('auth', () => {
         throw authError
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with GitHub'
+      const errorMessage = err instanceof Error ? err.message : `Failed to sign in with ${providerName}`
       error.value = errorMessage
-      console.error('Error signing in with GitHub:', errorMessage)
+      console.error(`Error signing in with ${providerName}:`, errorMessage)
       throw err
     } finally {
       loading.value = false
     }
+  }
+
+  async function signInWithGithub() {
+    return signInWithOAuth('github')
+  }
+
+  async function signInWithGoogle() {
+    return signInWithOAuth('google')
   }
 
   async function signOut() {
@@ -125,6 +135,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     initialize,
     signInWithGithub,
+    signInWithGoogle,
     signOut,
   }
 })

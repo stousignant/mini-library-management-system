@@ -24,7 +24,8 @@ describe('AuthButton', () => {
     const wrapper = mount(AuthButton)
 
     expect(wrapper.text()).toContain('Sign in with GitHub')
-    expect(wrapper.find('button').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Sign in with Google')
+    expect(wrapper.findAll('button').length).toBeGreaterThanOrEqual(2)
   })
 
   it('shows user info when authenticated', async () => {
@@ -76,12 +77,26 @@ describe('AuthButton', () => {
     expect(wrapper.find('.bg-purple-600').exists()).toBe(true)
   })
 
-  it('calls signInWithGithub when sign in button clicked', async () => {
+  it('calls signInWithGithub when GitHub button clicked', async () => {
     const wrapper = mount(AuthButton)
     const authStore = useAuthStore()
     const signInSpy = vi.spyOn(authStore, 'signInWithGithub').mockResolvedValue()
 
-    await wrapper.find('button').trigger('click')
+    const buttons = wrapper.findAll('button')
+    const githubButton = buttons.find(b => b.text().includes('GitHub'))
+    await githubButton?.trigger('click')
+
+    expect(signInSpy).toHaveBeenCalled()
+  })
+
+  it('calls signInWithGoogle when Google button clicked', async () => {
+    const wrapper = mount(AuthButton)
+    const authStore = useAuthStore()
+    const signInSpy = vi.spyOn(authStore, 'signInWithGoogle').mockResolvedValue()
+
+    const buttons = wrapper.findAll('button')
+    const googleButton = buttons.find(b => b.text().includes('Google'))
+    await googleButton?.trigger('click')
 
     expect(signInSpy).toHaveBeenCalled()
   })
