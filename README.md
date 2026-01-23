@@ -8,6 +8,18 @@ A modern, full-stack library management system built with FastAPI and Vue 3, fol
 
 This project implements a comprehensive library management system that goes beyond basic CRUD operations. It features user authentication, role-based access control, real-time statistics, advanced filtering, and a modern responsive UI—all built using TDD principles.
 
+## Built with AI Assistance (15 hours)
+
+This project was developed in approximately 15 hours using AI coding assistants (Claude Sonnet 4.5 via Cursor), demonstrating how modern AI tools can accelerate development while maintaining professional standards. The AI served as a collaborative pair programmer, helping with:
+
+- **Test-first implementation** following strict TDD cycles (Red → Green → Refactor)
+- **Architectural decisions** for authentication, RBAC, and concurrency control
+- **Best practices enforcement** through custom .cursorrules (zero magic numbers, self-documenting code)
+- **Full-stack development** spanning FastAPI, Vue 3, PostgreSQL, and Docker
+- **Production deployment** including CI/CD pipeline, automated testing, and Railway hosting
+
+The result is a production-ready application with 50+ integration tests, comprehensive documentation, and professional code quality—validating AI as a force multiplier for experienced developers who provide clear requirements and maintain high standards.
+
 ## Features
 
 ### ✅ Minimum Requirements (Delivered)
