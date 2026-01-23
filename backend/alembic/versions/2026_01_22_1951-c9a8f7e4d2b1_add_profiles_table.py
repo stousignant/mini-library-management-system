@@ -112,21 +112,30 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # Drop trigger
-    op.execute("DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users")
+    # Check if auth schema exists (Supabase only)
+    connection = op.get_bind()
+    result = connection.execute(
+        text("SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'auth')")
+    )
+    auth_schema_exists = result.scalar()
 
-    # Drop trigger function
-    op.execute("DROP FUNCTION IF EXISTS public.handle_new_user()")
+    # Only drop auth-related objects if auth schema exists
+    if auth_schema_exists:
+        # Drop trigger
+        op.execute("DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users")
 
-    # Drop RLS policies
-    op.execute("""
-        DROP POLICY IF EXISTS "Users can update their own profile" ON profiles
-    """)
-    op.execute("""
-        DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles
-    """)
+        # Drop trigger function
+        op.execute("DROP FUNCTION IF EXISTS public.handle_new_user()")
 
-    # Drop table
+        # Drop RLS policies
+        op.execute("""
+            DROP POLICY IF EXISTS "Users can update their own profile" ON profiles
+        """)
+        op.execute("""
+            DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles
+        """)
+
+    # Drop table (safe for both environments)
     op.execute("DROP TABLE IF EXISTS public.profiles")
 
     # Drop enum type
