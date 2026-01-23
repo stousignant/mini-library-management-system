@@ -2,24 +2,14 @@ import axios from 'axios'
 import { DEFAULT_API_URL, CONTENT_TYPE_JSON } from '@/constants/global'
 import { supabase } from './supabase'
 
-const getApiUrl = () => {
+const getApiUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_URL
 
   if (envUrl) {
     return envUrl
   }
 
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol.replace(':', '')
-    const hostname = window.location.hostname
-    const port = window.location.port
-
-    if (port) {
-      return `${protocol}://${hostname}:${port}`
-    }
-    return `${protocol}://${hostname}`
-  }
-
+  console.warn('VITE_API_URL not set, using default:', DEFAULT_API_URL)
   return DEFAULT_API_URL
 }
 
