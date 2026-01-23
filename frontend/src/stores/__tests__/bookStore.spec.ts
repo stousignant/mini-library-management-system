@@ -227,12 +227,25 @@ describe('bookStore', () => {
           isbn: '1234567890',
           cover_image: null,
           summary: null,
+          borrowed_by: null,
           status: BookStatus.Available,
           created_at: '2024-01-01T00:00:00Z',
         },
       ]
 
-      vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: {} })
+      vi.mocked(apiClient.patch).mockResolvedValueOnce({
+        data: {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          cover_image: null,
+          summary: null,
+          borrowed_by: 'user-id',
+          status: BookStatus.Borrowed,
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      })
 
       await store.toggleStatus(1)
 
@@ -252,12 +265,25 @@ describe('bookStore', () => {
           isbn: '1234567890',
           cover_image: null,
           summary: null,
+          borrowed_by: 'user-id',
           status: BookStatus.Borrowed,
           created_at: '2024-01-01T00:00:00Z',
         },
       ]
 
-      vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: {} })
+      vi.mocked(apiClient.patch).mockResolvedValueOnce({
+        data: {
+          id: 1,
+          title: 'Test Book',
+          author: 'Test Author',
+          isbn: '1234567890',
+          cover_image: null,
+          summary: null,
+          borrowed_by: null,
+          status: BookStatus.Available,
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      })
 
       await store.toggleStatus(1)
 
@@ -266,30 +292,35 @@ describe('bookStore', () => {
       expect(store.error).toBeNull()
     })
 
-    it('reverts status on API failure', async () => {
+    it('reverts status and shows toast on API failure', async () => {
       const store = useBookStore()
 
-      store.books = [
-        {
-          id: 1,
-          title: 'Test Book',
-          author: 'Test Author',
-          isbn: '1234567890',
-          cover_image: null,
-          summary: null,
-          status: BookStatus.Available,
-          created_at: '2024-01-01T00:00:00Z',
-        },
-      ]
+      const originalBook = {
+        id: 1,
+        title: 'Test Book',
+        author: 'Test Author',
+        isbn: '1234567890',
+        cover_image: null,
+        summary: null,
+        borrowed_by: null,
+        status: BookStatus.Available,
+        created_at: '2024-01-01T00:00:00Z',
+      }
 
-      vi.mocked(apiClient.patch).mockRejectedValueOnce(
-        new Error('Network error')
-      )
+      store.books = [originalBook]
+
+      vi.mocked(apiClient.patch).mockRejectedValueOnce({
+        response: {
+          data: {
+            detail: 'You can only return books you borrowed',
+          },
+        },
+      })
 
       await store.toggleStatus(1)
 
       expect(store.books[0].status).toBe(BookStatus.Available)
-      expect(store.error).toBe('Failed to update book status')
+      expect(apiClient.get).not.toHaveBeenCalled()
     })
   })
 

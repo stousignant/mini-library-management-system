@@ -4,12 +4,14 @@ import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import apiClient from '@/services/api'
 import { toast } from 'vue-sonner'
+import { STATS_POLLING_INTERVAL_MS } from '@/constants/global'
 
 export const useBookStore = defineStore('book', () => {
   const books = ref<Book[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const searchQuery = ref('')
+  let pollingInterval: ReturnType<typeof setInterval> | null = null
 
   const filteredBooks = computed(() => {
     const query = searchQuery.value.toLowerCase().trim()
@@ -22,18 +24,45 @@ export const useBookStore = defineStore('book', () => {
     )
   })
 
-  async function fetchBooks() {
-    isLoading.value = true
+  async function fetchBooks(silent = false) {
+    if (!silent) {
+      isLoading.value = true
+    }
     error.value = null
 
     try {
       const response = await apiClient.get<Book[]>('/books/')
-      books.value = response.data
+      const newBooks = response.data
+
+      if (silent) {
+        const currentIds = new Set(books.value.map(b => b.id))
+        const newIds = new Set(newBooks.map(b => b.id))
+        const hasStructuralChanges = currentIds.size !== newIds.size ||
+          [...currentIds].some(id => !newIds.has(id))
+
+        if (hasStructuralChanges) {
+          books.value = newBooks
+        } else {
+          newBooks.forEach(newBook => {
+            const existingBook = books.value.find(b => b.id === newBook.id)
+            if (existingBook && existingBook.status !== newBook.status) {
+              existingBook.status = newBook.status
+              existingBook.borrowed_by = newBook.borrowed_by
+            }
+          })
+        }
+      } else {
+        books.value = newBooks
+      }
     } catch (_err) {
-      error.value = 'Failed to fetch books'
-      books.value = []
+      if (!silent) {
+        error.value = 'Failed to fetch books'
+        books.value = []
+      }
     } finally {
-      isLoading.value = false
+      if (!silent) {
+        isLoading.value = false
+      }
     }
   }
 
@@ -42,23 +71,30 @@ export const useBookStore = defineStore('book', () => {
     if (!book) return
 
     const originalStatus = book.status
+    const originalBorrowedBy = book.borrowed_by
     const isBorrowing = originalStatus === BookStatus.Available
     const endpoint = isBorrowing ? 'borrow' : 'return'
 
     book.status = isBorrowing ? BookStatus.Borrowed : BookStatus.Available
 
     try {
-      await apiClient.patch(`/books/${bookId}/${endpoint}`)
+      const response = await apiClient.patch<Book>(`/books/${bookId}/${endpoint}`)
+      book.status = response.data.status
+      book.borrowed_by = response.data.borrowed_by
       toast.success(isBorrowing ? 'Book borrowed successfully!' : 'Book returned successfully!')
 
       // Refresh stats after successful status change
       const { useStatsStore } = await import('@/stores/statsStore')
       const statsStore = useStatsStore()
       await statsStore.fetchStatistics()
-    } catch (_err) {
+    } catch (err: any) {
+      // Revert optimistic update
       book.status = originalStatus
-      error.value = 'Failed to update book status'
-      toast.error('Failed to update book status')
+      book.borrowed_by = originalBorrowedBy
+
+      // Show user-friendly error message
+      const errorMessage = err?.response?.data?.detail || 'Failed to update book status'
+      toast.error(errorMessage)
     }
   }
 
@@ -117,6 +153,21 @@ export const useBookStore = defineStore('book', () => {
     }
   }
 
+  function startPolling() {
+    stopPolling()
+
+    pollingInterval = setInterval(() => {
+      fetchBooks(true)
+    }, STATS_POLLING_INTERVAL_MS)
+  }
+
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+    }
+  }
+
   return {
     books,
     isLoading,
@@ -128,5 +179,7 @@ export const useBookStore = defineStore('book', () => {
     addBook,
     updateBook,
     deleteBook,
+    startPolling,
+    stopPolling,
   }
 })

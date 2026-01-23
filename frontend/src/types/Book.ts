@@ -11,5 +11,6 @@ export interface Book {
   cover_image: string | null
   summary: string | null
   status: BookStatus
+  borrowed_by: string | null
   created_at: string
 }

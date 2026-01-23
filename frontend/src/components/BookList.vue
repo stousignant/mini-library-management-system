@@ -20,10 +20,12 @@ const bookToEdit = ref<Book | undefined>(undefined)
 onMounted(() => {
   bookStore.fetchBooks()
   statsStore.fetchStatistics()
+  bookStore.startPolling()
   statsStore.startPolling()
 })
 
 onUnmounted(() => {
+  bookStore.stopPolling()
   statsStore.stopPolling()
 })
 

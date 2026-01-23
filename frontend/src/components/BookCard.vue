@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import { useBookStore } from '@/stores/bookStore'
@@ -36,6 +37,27 @@ const getButtonVariant = (status: BookStatus) => {
 const getButtonLabel = (status: BookStatus) => {
   return status === BookStatus.Available ? 'Borrow' : 'Return'
 }
+
+const canInteractWithBook = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+
+  const isAvailable = props.book.status === BookStatus.Available || props.book.status === 'AVAILABLE'
+  if (isAvailable) {
+    return true
+  }
+
+  const isBorrowed = props.book.status === BookStatus.Borrowed || props.book.status === 'BORROWED'
+  if (isBorrowed) {
+    if (authStore.isAdmin) {
+      return true
+    }
+    return props.book.borrowed_by === authStore.user?.id
+  }
+
+  return false
+})
 
 function handleDelete() {
   if (
@@ -119,7 +141,7 @@ function handleImageError(event: globalThis.Event) {
 
     <CardFooter class="flex-col gap-2">
       <Button
-        v-if="authStore.isAuthenticated"
+        v-if="canInteractWithBook"
         :variant="getButtonVariant(book.status)"
         class="w-full"
         data-testid="toggle-status-btn"
