@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useBookStore } from '@/stores/bookStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useStatsStore } from '@/stores/statsStore'
@@ -17,6 +17,15 @@ const authStore = useAuthStore()
 const statsStore = useStatsStore()
 const isModalOpen = ref(false)
 const bookToEdit = ref<Book | undefined>(undefined)
+
+// Watch for auth user changes and update filterUserId
+watch(
+  () => authStore.user?.id,
+  (newUserId) => {
+    bookStore.filterUserId = newUserId || null
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   bookStore.filterUserId = authStore.user?.id || null
@@ -120,74 +129,61 @@ async function handleDelete(bookId: number) {
 
     <!-- Filters and Sorting -->
     <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-      <!-- Left side: My Books Filter -->
-      <div v-if="authStore.isAuthenticated" class="flex gap-2">
-        <Button
-          :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
-          class="gap-2"
-          @click="() => {
-            bookStore.filterUserId = authStore.user?.id || null
-            bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
-          }"
-        >
-          <User class="h-4 w-4" />
-          <span>My Books</span>
-          <Badge
-            :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
-            class="ml-1"
+      <!-- Left side: Filters (only when authenticated) -->
+      <div class="flex gap-2">
+        <template v-if="authStore.isAuthenticated">
+          <Button
+            :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
+            class="gap-2"
+            @click="() => {
+              bookStore.filterUserId = authStore.user?.id || null
+              bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
+            }"
           >
-            {{ bookStore.myBorrowedCount }}
-          </Badge>
-        </Button>
+            <User class="h-4 w-4" />
+            <span>My Books</span>
+            <Badge
+              :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
+              class="ml-1"
+            >
+              {{ bookStore.myBorrowedCount }}
+            </Badge>
+          </Button>
 
-        <Button
-          :variant="bookStore.showAvailableOnly ? 'default' : 'outline'"
-          class="gap-2"
-          @click="() => {
-            bookStore.showAvailableOnly = !bookStore.showAvailableOnly
-            console.log('Available Only toggled:', bookStore.showAvailableOnly)
-            console.log('Filtered books count:', bookStore.filteredBooks.length)
-          }"
-        >
-          <Filter class="h-4 w-4" />
-          <span>Available Only</span>
-        </Button>
+          <Button
+            :variant="bookStore.showAvailableOnly ? 'default' : 'outline'"
+            class="gap-2"
+            @click="bookStore.showAvailableOnly = !bookStore.showAvailableOnly"
+          >
+            <Filter class="h-4 w-4" />
+            <span>Available Only</span>
+          </Button>
+        </template>
       </div>
 
-      <!-- Right side: Sorting -->
-      <div class="flex items-center gap-2">
+      <!-- Right side: Sorting (always visible) -->
+      <div class="flex items-center gap-2 ml-auto">
         <SortAsc class="h-4 w-4 text-muted-foreground" />
         <span class="text-sm text-muted-foreground">Sort by:</span>
         <div class="flex gap-1">
           <Button
             :variant="bookStore.sortBy === 'none' ? 'default' : 'outline'"
             size="sm"
-            @click="() => {
-              bookStore.sortBy = 'none'
-              console.log('Sort changed to:', bookStore.sortBy)
-            }"
+            @click="bookStore.sortBy = 'none'"
           >
             Default
           </Button>
           <Button
             :variant="bookStore.sortBy === 'title' ? 'default' : 'outline'"
             size="sm"
-            @click="() => {
-              bookStore.sortBy = 'title'
-              console.log('Sort changed to:', bookStore.sortBy)
-              console.log('First 3 books:', bookStore.filteredBooks.slice(0, 3).map(b => b.title))
-            }"
+            @click="bookStore.sortBy = 'title'"
           >
             Title
           </Button>
           <Button
             :variant="bookStore.sortBy === 'date' ? 'default' : 'outline'"
             size="sm"
-            @click="() => {
-              bookStore.sortBy = 'date'
-              console.log('Sort changed to:', bookStore.sortBy)
-              console.log('First 3 books:', bookStore.filteredBooks.slice(0, 3).map(b => ({ title: b.title, date: b.created_at })))
-            }"
+            @click="bookStore.sortBy = 'date'"
           >
             Date Added
           </Button>

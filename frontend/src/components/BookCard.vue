@@ -43,12 +43,13 @@ const canInteractWithBook = computed(() => {
     return false
   }
 
-  const isAvailable = props.book.status === BookStatus.Available || props.book.status === 'AVAILABLE'
+  const statusStr = String(props.book.status).toUpperCase()
+  const isAvailable = statusStr === 'AVAILABLE'
   if (isAvailable) {
     return true
   }
 
-  const isBorrowed = props.book.status === BookStatus.Borrowed || props.book.status === 'BORROWED'
+  const isBorrowed = statusStr === 'BORROWED'
   if (isBorrowed) {
     if (authStore.isAdmin) {
       return true
@@ -76,7 +77,7 @@ function handleImageError(event: globalThis.Event) {
 <template>
   <Card
     :data-testid="`book-item-${book.id}`"
-    class="flex flex-col h-full"
+    class="flex flex-col h-[660px]"
   >
     <div class="relative w-full h-64 bg-muted">
       <div
@@ -104,7 +105,7 @@ function handleImageError(event: globalThis.Event) {
       </Badge>
     </div>
 
-    <CardHeader>
+    <CardHeader class="h-[96px] pb-2">
       <h3
         class="text-lg font-bold text-foreground line-clamp-2"
         :title="book.title"
@@ -113,33 +114,35 @@ function handleImageError(event: globalThis.Event) {
       </h3>
     </CardHeader>
 
-    <CardContent class="flex-1 space-y-2">
-      <div class="flex items-center text-sm text-muted-foreground">
-        <User class="w-4 h-4 mr-2" />
-        <span class="font-medium">{{ book.author }}</span>
+    <CardContent class="flex flex-col flex-grow">
+      <div class="flex items-center text-sm text-muted-foreground h-6 mb-2">
+        <User class="w-4 h-4 mr-2 flex-shrink-0" />
+        <span class="font-medium truncate" :title="book.author">{{ book.author }}</span>
       </div>
 
-      <div class="flex items-center text-sm text-muted-foreground">
-        <BookOpen class="w-4 h-4 mr-2" />
-        <span>{{ book.isbn || 'No ISBN' }}</span>
-      </div>
-
-      <div
-        v-if="book.summary"
-        class="pt-2 text-sm text-muted-foreground italic border-t"
-      >
-        {{ book.summary }}
+      <div class="flex items-center text-sm text-muted-foreground h-6 mb-2">
+        <BookOpen class="w-4 h-4 mr-2 flex-shrink-0" />
+        <span class="truncate" :title="book.isbn || 'No ISBN'">{{ book.isbn || 'No ISBN' }}</span>
       </div>
 
       <div
-        class="flex items-center text-xs text-muted-foreground pt-2 border-t"
+        class="pt-2 text-sm text-muted-foreground italic border-t h-[84px] overflow-hidden mb-2"
+        :title="book.summary || ''"
       >
-        <Clock class="w-4 h-4 mr-1" />
-        Added {{ new Date(book.created_at).toLocaleDateString() }}
+        <p v-if="book.summary" class="line-clamp-3">
+          {{ book.summary }}
+        </p>
+      </div>
+
+      <div
+        class="flex items-center text-xs text-muted-foreground pt-2 border-t h-6"
+      >
+        <Clock class="w-4 h-4 mr-1 flex-shrink-0" />
+        <span class="truncate">Added {{ new Date(book.created_at).toLocaleDateString() }}</span>
       </div>
     </CardContent>
 
-    <CardFooter class="flex-col gap-2">
+    <CardFooter class="flex-col gap-2 mt-auto">
       <Button
         v-if="canInteractWithBook"
         :variant="getButtonVariant(book.status)"

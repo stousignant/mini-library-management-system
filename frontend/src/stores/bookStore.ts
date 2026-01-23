@@ -28,31 +28,19 @@ export const useBookStore = defineStore('book', () => {
   })
 
   const filteredBooks = computed(() => {
-    console.log('=== FILTERING COMPUTED RUNNING ===')
-    console.log('showAvailableOnly:', showAvailableOnly.value)
-    console.log('sortBy:', sortBy.value)
-    console.log('showMyBooksOnly:', showMyBooksOnly.value)
-
     let result = [...books.value]
 
-    // Filter by my books
     if (showMyBooksOnly.value && filterUserId.value) {
       result = result.filter(book => book.borrowed_by === filterUserId.value)
-      console.log('after mine filter:', result.length)
     }
 
-    // Filter by available only
     if (showAvailableOnly.value) {
-      console.log('Filtering by available...')
-      const beforeCount = result.length
       result = result.filter(book => {
-        const isAvailable = book.status === BookStatus.Available || book.status === 'AVAILABLE'
-        return isAvailable
+        const statusStr = String(book.status).toUpperCase()
+        return statusStr === 'AVAILABLE'
       })
-      console.log('available filter: from', beforeCount, 'to', result.length)
     }
 
-    // Search filter
     const searchTerm = searchQuery.value.toLowerCase().trim()
     if (searchTerm) {
       result = result.filter(
@@ -60,20 +48,14 @@ export const useBookStore = defineStore('book', () => {
           book.title.toLowerCase().includes(searchTerm) ||
           book.author.toLowerCase().includes(searchTerm)
       )
-      console.log('after search filter:', result.length)
     }
 
-    // Sorting
-    const currentSort = sortBy.value
-    if (currentSort === 'title') {
-      console.log('Sorting by title...')
+    if (sortBy.value === 'title') {
       result.sort((a, b) => a.title.localeCompare(b.title))
-    } else if (currentSort === 'date') {
-      console.log('Sorting by date...')
+    } else if (sortBy.value === 'date') {
       result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
-    console.log('=== DONE, returning:', result.length, 'books ===')
     return result
   })
 
