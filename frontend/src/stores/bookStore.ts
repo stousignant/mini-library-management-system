@@ -137,8 +137,21 @@ export const useBookStore = defineStore('book', () => {
       book.borrowed_by = originalBorrowedBy
 
       // Show user-friendly error message
-      const errorMessage =
-        (err as any)?.response?.data?.detail || 'Failed to update book status'
+      let errorMessage = 'Failed to update book status'
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        err.response &&
+        typeof err.response === 'object' &&
+        'data' in err.response &&
+        err.response.data &&
+        typeof err.response.data === 'object' &&
+        'detail' in err.response.data &&
+        typeof err.response.data.detail === 'string'
+      ) {
+        errorMessage = err.response.data.detail
+      }
       toast.error(errorMessage)
     }
   }
