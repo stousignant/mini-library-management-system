@@ -21,14 +21,17 @@ from app.models.profile import Profile
 settings = get_settings()
 
 
-def create_test_token(user_id: str, email: str, expires_delta: timedelta | None = None) -> str:
-    """Create test JWT token."""
+def create_test_token(
+    user_id: str, email: str, role: str = "authenticated", expires_delta: timedelta | None = None
+) -> str:
+    """Create test JWT token with optional role."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
 
     payload = {
         "sub": user_id,
         "email": email,
+        "role": role,
         "aud": JWT_AUDIENCE_AUTHENTICATED,
         "exp": datetime.now(timezone.utc) + expires_delta,
         "iat": datetime.now(timezone.utc),
@@ -45,7 +48,7 @@ async def test_get_current_user_profile_success(client: AsyncClient, async_sessi
     async_session.add(profile)
     await async_session.commit()
 
-    token = create_test_token(str(user_id), "test@example.com")
+    token = create_test_token(str(user_id), "test@example.com", role="service_role")
     response = await client.get("/profile", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200

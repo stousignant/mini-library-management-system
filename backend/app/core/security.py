@@ -223,13 +223,50 @@ def validate_email(email: str) -> str:
     return email
 
 
+def detect_role_from_jwt(user_payload: dict) -> UserRole:
+    """
+    Detect user role from Supabase JWT token payload.
+
+    Checks multiple fields to determine if user should be admin:
+    - 'role' field: 'service_role' or 'ADMIN' indicates Supabase admin
+    - 'user_metadata' or 'app_metadata': custom role field
+
+    Args:
+        user_payload: Decoded JWT token payload
+
+    Returns:
+        UserRole.ADMIN if admin indicators found, otherwise UserRole.MEMBER
+    """
+    supabase_role = user_payload.get("role", "")
+    if supabase_role.lower() in ("service_role", "admin"):
+        logger.info(f"Admin user detected via role '{supabase_role}': {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    user_metadata = user_payload.get("user_metadata", {})
+    app_metadata = user_payload.get("app_metadata", {})
+
+    metadata_role = user_metadata.get("role") or app_metadata.get("role")
+    if metadata_role and metadata_role.upper() == "ADMIN":
+        logger.info(f"Admin user detected via metadata: {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    is_admin = user_metadata.get("is_admin") or app_metadata.get("is_admin")
+    if is_admin:
+        logger.info(f"Admin user detected via is_admin flag: {user_payload.get('email')}")
+        return UserRole.ADMIN
+
+    return UserRole.MEMBER
+
+
 async def get_current_user_with_role(
     user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> Profile:
     """
     Fetch user profile with role from database.
 
-    If profile doesn't exist, creates it automatically with MEMBER role.
+    If profile doesn't exist, creates it automatically with role detected from
+    Supabase JWT token (ADMIN if Supabase admin, otherwise MEMBER).
+    The database is the source of truth for roles once created.
     Handles race conditions where multiple requests try to create the same
     profile simultaneously. Validates email format before creating profile.
 
@@ -253,10 +290,12 @@ async def get_current_user_with_role(
 
     if profile is None:
         try:
-            profile = Profile(id=user_id, email=email, role=UserRole.MEMBER)
+            detected_role = detect_role_from_jwt(user)
+            profile = Profile(id=user_id, email=email, role=detected_role)
             db.add(profile)
             await db.commit()
             await db.refresh(profile)
+            logger.info(f"Created profile for {email} with role {detected_role.value}")
         except IntegrityError:
             await db.rollback()
             result = await db.execute(select(Profile).where(Profile.id == user_id))

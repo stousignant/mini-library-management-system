@@ -18,11 +18,12 @@ from app.models.profile import Profile
 settings = get_settings()
 
 
-def create_test_token(user_id: str, email: str) -> str:
-    """Create test JWT token."""
+def create_test_token(user_id: str, email: str, role: str = "authenticated") -> str:
+    """Create test JWT token with optional role."""
     payload = {
         "sub": user_id,
         "email": email,
+        "role": role,
         "aud": JWT_AUDIENCE_AUTHENTICATED,
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
         "iat": datetime.now(timezone.utc),
@@ -48,7 +49,7 @@ async def admin_profile(async_session):
 @pytest.fixture
 def admin_token(admin_profile):
     """Generate token for admin user."""
-    return create_test_token(str(admin_profile.id), admin_profile.email)
+    return create_test_token(str(admin_profile.id), admin_profile.email, role="service_role")
 
 
 @pytest.mark.asyncio

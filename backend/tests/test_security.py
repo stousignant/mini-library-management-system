@@ -14,7 +14,13 @@ from app.core.constants import (
     JWT_ALGORITHM,
     JWT_AUDIENCE_AUTHENTICATED,
 )
-from app.core.security import decode_jwt_token, get_current_user, get_current_user_with_role, require_role
+from app.core.security import (
+    decode_jwt_token,
+    detect_role_from_jwt,
+    get_current_user,
+    get_current_user_with_role,
+    require_role,
+)
 from app.models.enums import UserRole
 
 settings = get_settings()
@@ -133,11 +139,140 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
 
 
+class TestDetectRoleFromJwt:
+    """Tests for detect_role_from_jwt function."""
+
+    def test_detect_admin_from_service_role(self):
+        """Should detect ADMIN when JWT has service_role."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "service_role",
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_admin_from_admin_role(self):
+        """Should detect ADMIN when JWT has role=ADMIN."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "ADMIN",
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_admin_from_user_metadata(self):
+        """Should detect ADMIN from user_metadata.role field."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "authenticated",
+            "user_metadata": {"role": "ADMIN"},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_admin_from_app_metadata(self):
+        """Should detect ADMIN from app_metadata.role field."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "authenticated",
+            "app_metadata": {"role": "ADMIN"},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_admin_from_is_admin_flag_in_user_metadata(self):
+        """Should detect ADMIN from user_metadata.is_admin flag."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "authenticated",
+            "user_metadata": {"is_admin": True},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_admin_from_is_admin_flag_in_app_metadata(self):
+        """Should detect ADMIN from app_metadata.is_admin flag."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "authenticated",
+            "app_metadata": {"is_admin": True},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+    def test_detect_member_from_authenticated_role(self):
+        """Should detect MEMBER for regular authenticated user."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "user@example.com",
+            "role": "authenticated",
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.MEMBER
+
+    def test_detect_member_when_no_role_field(self):
+        """Should default to MEMBER when role field is missing."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "user@example.com",
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.MEMBER
+
+    def test_detect_member_when_is_admin_false(self):
+        """Should detect MEMBER when is_admin is explicitly false."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "user@example.com",
+            "role": "authenticated",
+            "user_metadata": {"is_admin": False},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.MEMBER
+
+    def test_case_insensitive_role_detection(self):
+        """Should detect admin role case-insensitively."""
+        payload = {
+            "sub": str(uuid.uuid4()),
+            "email": "admin@example.com",
+            "role": "authenticated",
+            "user_metadata": {"role": "admin"},
+        }
+
+        role = detect_role_from_jwt(payload)
+
+        assert role == UserRole.ADMIN
+
+
 class TestGetCurrentUserWithRole:
     """Tests for get_current_user_with_role dependency."""
 
     async def test_get_user_with_role_existing_profile(self, async_session):
-        """Should return profile for existing user."""
+        """Should return profile for existing user with matching JWT role."""
         from app.models.profile import Profile
 
         user_id = uuid.uuid4()
@@ -147,7 +282,12 @@ class TestGetCurrentUserWithRole:
         async_session.add(profile)
         await async_session.commit()
 
-        user_payload = {"sub": str(user_id), "email": email, "aud": JWT_AUDIENCE_AUTHENTICATED}
+        user_payload = {
+            "sub": str(user_id),
+            "email": email,
+            "role": "service_role",
+            "aud": JWT_AUDIENCE_AUTHENTICATED,
+        }
 
         result = await get_current_user_with_role(user_payload, async_session)
 
@@ -167,6 +307,49 @@ class TestGetCurrentUserWithRole:
         assert result.id == user_id
         assert result.email == email
         assert result.role == UserRole.MEMBER
+
+    async def test_get_user_with_role_creates_admin_from_jwt(self, async_session):
+        """Should auto-create profile with ADMIN role when JWT indicates service_role."""
+        user_id = uuid.uuid4()
+        email = "admin@example.com"
+        user_payload = {
+            "sub": str(user_id),
+            "email": email,
+            "role": "service_role",
+            "aud": JWT_AUDIENCE_AUTHENTICATED,
+        }
+
+        result = await get_current_user_with_role(user_payload, async_session)
+
+        assert result is not None
+        assert result.id == user_id
+        assert result.email == email
+        assert result.role == UserRole.ADMIN
+
+    async def test_get_user_with_role_keeps_existing_profile_role(self, async_session):
+        """Should keep existing profile role from database (database is source of truth)."""
+        from app.models.profile import Profile
+
+        user_id = uuid.uuid4()
+        email = "user@example.com"
+
+        profile = Profile(id=user_id, email=email, role=UserRole.ADMIN, created_at=datetime.now(timezone.utc))
+        async_session.add(profile)
+        await async_session.commit()
+
+        user_payload = {
+            "sub": str(user_id),
+            "email": email,
+            "role": "authenticated",
+            "aud": JWT_AUDIENCE_AUTHENTICATED,
+        }
+
+        result = await get_current_user_with_role(user_payload, async_session)
+
+        assert result is not None
+        assert result.id == user_id
+        assert result.email == email
+        assert result.role == UserRole.ADMIN
 
 
 class TestRequireRole:

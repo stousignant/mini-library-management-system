@@ -15,14 +15,17 @@ from app.models.profile import Profile
 settings = get_settings()
 
 
-def create_test_token(user_id: str, email: str, expires_delta: timedelta | None = None) -> str:
-    """Create test JWT token."""
+def create_test_token(
+    user_id: str, email: str, role: str = "authenticated", expires_delta: timedelta | None = None
+) -> str:
+    """Create test JWT token with optional role."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
 
     payload = {
         "sub": user_id,
         "email": email,
+        "role": role,
         "aud": JWT_AUDIENCE_AUTHENTICATED,
         "exp": datetime.now(timezone.utc) + expires_delta,
         "iat": datetime.now(timezone.utc),
@@ -64,13 +67,13 @@ async def member_profile(async_session):
 @pytest.fixture
 def admin_token(admin_profile):
     """Generate token for admin user."""
-    return create_test_token(str(admin_profile.id), admin_profile.email)
+    return create_test_token(str(admin_profile.id), admin_profile.email, role="service_role")
 
 
 @pytest.fixture
 def member_token(member_profile):
     """Generate token for member user."""
-    return create_test_token(str(member_profile.id), member_profile.email)
+    return create_test_token(str(member_profile.id), member_profile.email, role="authenticated")
 
 
 class TestBooksAuthIntegration:
