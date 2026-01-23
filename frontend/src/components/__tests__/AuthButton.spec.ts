@@ -97,7 +97,7 @@ describe('AuthButton', () => {
     const buttons = wrapper.findAll('button')
     const githubButton = buttons.find(b => b.text().includes('GitHub'))
     expect(githubButton).toBeTruthy()
-    await githubButton.trigger('click')
+    await githubButton!.trigger('click')
 
     expect(signInSpy).toHaveBeenCalled()
   })
@@ -112,7 +112,7 @@ describe('AuthButton', () => {
     const buttons = wrapper.findAll('button')
     const googleButton = buttons.find(b => b.text().includes('Google'))
     expect(googleButton).toBeTruthy()
-    await googleButton.trigger('click')
+    await googleButton!.trigger('click')
 
     expect(signInSpy).toHaveBeenCalled()
   })
@@ -141,7 +141,7 @@ describe('AuthButton', () => {
     const signOutButton = buttons.find(b => b.text() === 'Sign Out')
     expect(signOutButton).toBeTruthy()
 
-    await signOutButton.trigger('click')
+    await signOutButton!.trigger('click')
 
     expect(signOutSpy).toHaveBeenCalled()
   })

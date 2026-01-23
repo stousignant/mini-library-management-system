@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../authStore'
 import { supabase } from '@/services/supabase'
 import apiClient from '@/services/api'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User, Session, Subscription } from '@supabase/supabase-js'
 
 vi.mock('@/services/supabase', () => ({
   supabase: {
@@ -73,8 +73,14 @@ describe('authStore', () => {
     })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    } as { data: { subscription: { unsubscribe: () => void } } })
+      data: {
+        subscription: {
+          id: 'test-subscription-id',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        } as Subscription,
+      },
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'ADMIN' },
@@ -103,8 +109,14 @@ describe('authStore', () => {
     })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    } as { data: { subscription: { unsubscribe: () => void } } })
+      data: {
+        subscription: {
+          id: 'test-subscription-id',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        } as Subscription,
+      },
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'ADMIN' },
@@ -133,8 +145,14 @@ describe('authStore', () => {
     })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    } as { data: { subscription: { unsubscribe: () => void } } })
+      data: {
+        subscription: {
+          id: 'test-subscription-id',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        } as Subscription,
+      },
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'MEMBER' },
@@ -213,8 +231,14 @@ describe('authStore', () => {
     })
 
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    } as { data: { subscription: { unsubscribe: () => void } } })
+      data: {
+        subscription: {
+          id: 'test-subscription-id',
+          callback: vi.fn(),
+          unsubscribe: vi.fn(),
+        } as Subscription,
+      },
+    })
 
     vi.mocked(apiClient.get).mockResolvedValue({
       data: { role: 'MEMBER' },
