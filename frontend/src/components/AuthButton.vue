@@ -45,7 +45,10 @@ const handleSignOut = async () => {
 <template>
   <div class="flex items-center gap-3">
     <!-- Loading State -->
-    <div v-if="authStore.loading" class="flex items-center gap-2 text-muted-foreground">
+    <div
+      v-if="authStore.loading"
+      class="flex items-center gap-2 text-muted-foreground"
+    >
       <Loader2 class="h-5 w-5 animate-spin" />
       <span class="text-sm">Loading...</span>
     </div>
@@ -54,27 +57,16 @@ const handleSignOut = async () => {
     <div v-else-if="authStore.isAuthenticated" class="flex items-center gap-3">
       <div class="flex items-center gap-2">
         <span class="text-sm text-foreground">{{ authStore.user?.email }}</span>
-        <Badge v-if="authStore.isAdmin" variant="default">
-          Admin
-        </Badge>
-        <Badge v-else variant="secondary">
-          Member
-        </Badge>
+        <Badge v-if="authStore.isAdmin" variant="default"> Admin </Badge>
+        <Badge v-else variant="secondary"> Member </Badge>
       </div>
-      <Button
-        variant="outline"
-        @click="handleSignOut"
-      >
-        Sign Out
-      </Button>
+      <Button variant="outline" @click="handleSignOut"> Sign Out </Button>
     </div>
 
     <!-- Unauthenticated State -->
     <Dialog v-else v-model:open="isSignInDialogOpen">
       <DialogTrigger as-child>
-        <Button variant="default">
-          Sign In
-        </Button>
+        <Button variant="default"> Sign In </Button>
       </DialogTrigger>
       <DialogContent class="sm:max-w-md">
         <DialogHeader>

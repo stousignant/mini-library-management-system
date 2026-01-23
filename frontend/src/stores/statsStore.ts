@@ -21,7 +21,8 @@ export const useStatsStore = defineStore('stats', () => {
       available.value = stats.available
       borrowed.value = stats.borrowed
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch statistics'
+      error.value =
+        err instanceof Error ? err.message : 'Failed to fetch statistics'
       console.error('Failed to fetch book statistics:', err)
     } finally {
       isLoading.value = false

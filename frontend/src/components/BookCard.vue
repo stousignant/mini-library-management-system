@@ -4,12 +4,7 @@ import type { Book } from '@/types/Book'
 import { BookStatus } from '@/types/Book'
 import { useBookStore } from '@/stores/bookStore'
 import { useAuthStore } from '@/stores/authStore'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { User, BookOpen, Clock } from 'lucide-vue-next'
@@ -75,10 +70,7 @@ function handleImageError(event: globalThis.Event) {
 </script>
 
 <template>
-  <Card
-    :data-testid="`book-item-${book.id}`"
-    class="flex flex-col h-[660px]"
-  >
+  <Card :data-testid="`book-item-${book.id}`" class="flex flex-col h-[660px]">
     <div class="relative w-full h-64 bg-muted">
       <div
         v-if="book.cover_image"
@@ -117,12 +109,16 @@ function handleImageError(event: globalThis.Event) {
     <CardContent class="flex flex-col flex-grow">
       <div class="flex items-center text-sm text-muted-foreground h-6 mb-2">
         <User class="w-4 h-4 mr-2 flex-shrink-0" />
-        <span class="font-medium truncate" :title="book.author">{{ book.author }}</span>
+        <span class="font-medium truncate" :title="book.author">{{
+          book.author
+        }}</span>
       </div>
 
       <div class="flex items-center text-sm text-muted-foreground h-6 mb-2">
         <BookOpen class="w-4 h-4 mr-2 flex-shrink-0" />
-        <span class="truncate" :title="book.isbn || 'No ISBN'">{{ book.isbn || 'No ISBN' }}</span>
+        <span class="truncate" :title="book.isbn || 'No ISBN'">{{
+          book.isbn || 'No ISBN'
+        }}</span>
       </div>
 
       <div
@@ -138,7 +134,9 @@ function handleImageError(event: globalThis.Event) {
         class="flex items-center text-xs text-muted-foreground pt-2 border-t h-6"
       >
         <Clock class="w-4 h-4 mr-1 flex-shrink-0" />
-        <span class="truncate">Added {{ new Date(book.created_at).toLocaleDateString() }}</span>
+        <span class="truncate"
+          >Added {{ new Date(book.created_at).toLocaleDateString() }}</span
+        >
       </div>
     </CardContent>
 

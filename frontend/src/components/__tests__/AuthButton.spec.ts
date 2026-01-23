@@ -105,7 +105,9 @@ describe('AuthButton', () => {
     expect(githubButton).toBeTruthy()
     expect(githubButton?.textContent).toContain('GitHub')
 
-    await githubButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await githubButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    )
     await wrapper.vm.$nextTick()
 
     expect(signInSpy).toHaveBeenCalled()
@@ -130,7 +132,9 @@ describe('AuthButton', () => {
     const googleButton = buttons.find(b => b.textContent?.includes('Google'))
     expect(googleButton).toBeTruthy()
 
-    await googleButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await googleButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    )
     await wrapper.vm.$nextTick()
 
     expect(signInSpy).toHaveBeenCalled()

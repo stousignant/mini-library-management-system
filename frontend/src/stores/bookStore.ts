@@ -22,9 +22,8 @@ export const useBookStore = defineStore('book', () => {
   const myBorrowedCount = computed(() => {
     if (!filterUserId.value) return 0
 
-    return books.value.filter(
-      book => book.borrowed_by === filterUserId.value
-    ).length
+    return books.value.filter(book => book.borrowed_by === filterUserId.value)
+      .length
   })
 
   const filteredBooks = computed(() => {
@@ -53,7 +52,10 @@ export const useBookStore = defineStore('book', () => {
     if (sortBy.value === 'title') {
       result.sort((a, b) => a.title.localeCompare(b.title))
     } else if (sortBy.value === 'date') {
-      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      result.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
     }
 
     return result
@@ -72,7 +74,8 @@ export const useBookStore = defineStore('book', () => {
       if (silent) {
         const currentIds = new Set(books.value.map(b => b.id))
         const newIds = new Set(newBooks.map(b => b.id))
-        const hasStructuralChanges = currentIds.size !== newIds.size ||
+        const hasStructuralChanges =
+          currentIds.size !== newIds.size ||
           [...currentIds].some(id => !newIds.has(id))
 
         if (hasStructuralChanges) {
@@ -113,22 +116,29 @@ export const useBookStore = defineStore('book', () => {
     book.status = isBorrowing ? BookStatus.Borrowed : BookStatus.Available
 
     try {
-      const response = await apiClient.patch<Book>(`/books/${bookId}/${endpoint}`)
+      const response = await apiClient.patch<Book>(
+        `/books/${bookId}/${endpoint}`
+      )
       book.status = response.data.status
       book.borrowed_by = response.data.borrowed_by
-      toast.success(isBorrowing ? 'Book borrowed successfully!' : 'Book returned successfully!')
+      toast.success(
+        isBorrowing
+          ? 'Book borrowed successfully!'
+          : 'Book returned successfully!'
+      )
 
       // Refresh stats after successful status change
       const { useStatsStore } = await import('@/stores/statsStore')
       const statsStore = useStatsStore()
       await statsStore.fetchStatistics()
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Revert optimistic update
       book.status = originalStatus
       book.borrowed_by = originalBorrowedBy
 
       // Show user-friendly error message
-      const errorMessage = err?.response?.data?.detail || 'Failed to update book status'
+      const errorMessage =
+        err?.response?.data?.detail || 'Failed to update book status'
       toast.error(errorMessage)
     }
   }

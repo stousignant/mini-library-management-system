@@ -100,7 +100,11 @@ function handleOpenChange(open: boolean) {
           {{ isEditMode ? 'Edit Book' : 'Add New Book' }}
         </DialogTitle>
         <DialogDescription>
-          {{ isEditMode ? 'Update the book information below.' : 'Fill in the details to add a new book to the library.' }}
+          {{
+            isEditMode
+              ? 'Update the book information below.'
+              : 'Fill in the details to add a new book to the library.'
+          }}
         </DialogDescription>
       </DialogHeader>
 
@@ -170,17 +174,10 @@ function handleOpenChange(open: boolean) {
         </div>
 
         <DialogFooter class="mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            @click="handleClose"
-          >
+          <Button type="button" variant="outline" @click="handleClose">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            data-testid="submit-btn"
-          >
+          <Button type="submit" data-testid="submit-btn">
             {{ isEditMode ? 'Save Changes' : 'Add Book' }}
           </Button>
         </DialogFooter>

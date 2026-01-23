@@ -9,7 +9,17 @@ import type { Book } from '@/types/Book'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { BookOpen, CheckCircle, Clock, Search, AlertCircle, Loader2, User, SortAsc, Filter } from 'lucide-vue-next'
+import {
+  BookOpen,
+  CheckCircle,
+  Clock,
+  Search,
+  AlertCircle,
+  Loader2,
+  User,
+  SortAsc,
+  Filter,
+} from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 
 const bookStore = useBookStore()
@@ -21,7 +31,7 @@ const bookToEdit = ref<Book | undefined>(undefined)
 // Watch for auth user changes and update filterUserId
 watch(
   () => authStore.user?.id,
-  (newUserId) => {
+  newUserId => {
     bookStore.filterUserId = newUserId || null
   },
   { immediate: true }
@@ -88,57 +98,61 @@ async function handleDelete(bookId: number) {
     <!-- Stats Dashboard -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
           <CardTitle class="text-sm font-medium">Total Books</CardTitle>
           <BookOpen class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ statsStore.total }}</div>
-          <p class="text-xs text-muted-foreground">
-            Books in the library
-          </p>
+          <p class="text-xs text-muted-foreground">Books in the library</p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
           <CardTitle class="text-sm font-medium">Available</CardTitle>
           <CheckCircle class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ statsStore.available }}</div>
-          <p class="text-xs text-muted-foreground">
-            Ready to borrow
-          </p>
+          <p class="text-xs text-muted-foreground">Ready to borrow</p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader
+          class="flex flex-row items-center justify-between space-y-0 pb-2"
+        >
           <CardTitle class="text-sm font-medium">Borrowed</CardTitle>
           <Clock class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ statsStore.borrowed }}</div>
-          <p class="text-xs text-muted-foreground">
-            Currently out
-          </p>
+          <p class="text-xs text-muted-foreground">Currently out</p>
         </CardContent>
       </Card>
     </div>
 
     <!-- Filters and Sorting -->
-    <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+    <div
+      class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
+    >
       <!-- Left side: Filters (only when authenticated) -->
       <div class="flex gap-2">
         <template v-if="authStore.isAuthenticated">
           <Button
             :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
             class="gap-2"
-            @click="() => {
-              bookStore.filterUserId = authStore.user?.id || null
-              bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
-            }"
+            @click="
+              () => {
+                bookStore.filterUserId = authStore.user?.id || null
+                bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
+              }
+            "
           >
             <User class="h-4 w-4" />
             <span>My Books</span>
@@ -198,7 +212,9 @@ async function handleDelete(bookId: number) {
       class="flex items-center justify-center py-12"
     >
       <div class="text-center">
-        <Loader2 class="inline-block h-12 w-12 animate-spin text-muted-foreground mb-4" />
+        <Loader2
+          class="inline-block h-12 w-12 animate-spin text-muted-foreground mb-4"
+        />
         <p class="text-muted-foreground">Loading books...</p>
       </div>
     </div>
@@ -217,7 +233,9 @@ async function handleDelete(bookId: number) {
     <div v-else data-testid="book-list" class="space-y-6">
       <div class="flex gap-4">
         <div class="relative flex-1">
-          <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          />
           <Input
             v-model="bookStore.searchQuery"
             type="text"

@@ -52,7 +52,9 @@ describe('statsStore', () => {
 
   it('handles fetch errors gracefully', async () => {
     const errorMessage = 'Network error'
-    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(new Error(errorMessage))
+    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(
+      new Error(errorMessage)
+    )
 
     const store = useStatsStore()
 
@@ -66,7 +68,9 @@ describe('statsStore', () => {
   })
 
   it('sets loading to false even when error occurs', async () => {
-    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(new Error('Network error'))
+    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(
+      new Error('Network error')
+    )
 
     const store = useStatsStore()
 
@@ -106,7 +110,9 @@ describe('statsStore', () => {
   })
 
   it('clears error when fetch succeeds after a previous error', async () => {
-    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(new Error('Network error'))
+    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(
+      new Error('Network error')
+    )
 
     const store = useStatsStore()
 
@@ -158,7 +164,9 @@ describe('statsStore', () => {
     await store.fetchStatistics()
     expect(store.total).toBe(5)
 
-    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(new Error('Network error'))
+    vi.mocked(api.getBookStatistics).mockRejectedValueOnce(
+      new Error('Network error')
+    )
     await store.fetchStatistics()
 
     expect(store.total).toBe(5)
