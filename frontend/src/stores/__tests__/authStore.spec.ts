@@ -1,18 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../authStore'
-
-const mockSupabase = {
-  auth: {
-    getSession: vi.fn(),
-    signInWithOAuth: vi.fn(),
-    signOut: vi.fn(),
-    onAuthStateChange: vi.fn(),
-  },
-}
+import { supabase } from '@/services/supabase'
+import apiClient from '@/services/api'
 
 vi.mock('@/services/supabase', () => ({
-  supabase: mockSupabase,
+  supabase: {
+    auth: {
+      getSession: vi.fn(),
+      signInWithOAuth: vi.fn(),
+      signOut: vi.fn(),
+      onAuthStateChange: vi.fn(),
+    },
+  },
+}))
+
+vi.mock('@/services/api', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
 }))
 
 describe('authStore', () => {
@@ -48,7 +57,7 @@ describe('authStore', () => {
   it('userRole extracts role from session user metadata', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.getSession.mockResolvedValue({
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
         session: {
           access_token: 'test-token',
@@ -56,10 +65,18 @@ describe('authStore', () => {
             id: '123',
             email: 'admin@example.com',
             app_metadata: { role: 'ADMIN' },
-          },
-        },
+          } as any,
+        } as any,
       },
       error: null,
+    } as any)
+
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as any)
+
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'ADMIN' },
     })
 
     await authStore.initialize()
@@ -70,7 +87,7 @@ describe('authStore', () => {
   it('isAdmin returns true for ADMIN role', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.getSession.mockResolvedValue({
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
         session: {
           access_token: 'test-token',
@@ -78,10 +95,18 @@ describe('authStore', () => {
             id: '123',
             email: 'admin@example.com',
             app_metadata: { role: 'ADMIN' },
-          },
-        },
+          } as any,
+        } as any,
       },
       error: null,
+    } as any)
+
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as any)
+
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'ADMIN' },
     })
 
     await authStore.initialize()
@@ -92,7 +117,7 @@ describe('authStore', () => {
   it('isAdmin returns false for MEMBER role', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.getSession.mockResolvedValue({
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
         session: {
           access_token: 'test-token',
@@ -100,10 +125,18 @@ describe('authStore', () => {
             id: '123',
             email: 'member@example.com',
             app_metadata: { role: 'MEMBER' },
-          },
-        },
+          } as any,
+        } as any,
       },
       error: null,
+    } as any)
+
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as any)
+
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'MEMBER' },
     })
 
     await authStore.initialize()
@@ -114,14 +147,14 @@ describe('authStore', () => {
   it('signInWithGithub calls Supabase OAuth', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.signInWithOAuth.mockResolvedValue({
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
       data: { provider: 'github', url: 'https://github.com/login' },
       error: null,
     })
 
     await authStore.signInWithGithub()
 
-    expect(mockSupabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'github',
     })
   })
@@ -129,14 +162,14 @@ describe('authStore', () => {
   it('signInWithGoogle calls Supabase OAuth', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.signInWithOAuth.mockResolvedValue({
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
       data: { provider: 'google', url: 'https://accounts.google.com/signin' },
       error: null,
     })
 
     await authStore.signInWithGoogle()
 
-    expect(mockSupabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
     })
   })
@@ -150,13 +183,13 @@ describe('authStore', () => {
     } as any
     authStore.user = { id: '123', email: 'test@example.com' } as any
 
-    mockSupabase.auth.signOut.mockResolvedValue({
+    vi.mocked(supabase.auth.signOut).mockResolvedValue({
       error: null,
     })
 
     await authStore.signOut()
 
-    expect(mockSupabase.auth.signOut).toHaveBeenCalled()
+    expect(supabase.auth.signOut).toHaveBeenCalled()
     expect(authStore.session).toBeNull()
     expect(authStore.user).toBeNull()
   })
@@ -164,7 +197,7 @@ describe('authStore', () => {
   it('initialize loads existing session', async () => {
     const authStore = useAuthStore()
 
-    mockSupabase.auth.getSession.mockResolvedValue({
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
         session: {
           access_token: 'test-token',
@@ -172,14 +205,18 @@ describe('authStore', () => {
             id: '123',
             email: 'test@example.com',
             app_metadata: { role: 'MEMBER' },
-          },
-        },
+          } as any,
+        } as any,
       },
       error: null,
-    })
+    } as any)
 
-    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
+    } as any)
+
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'MEMBER' },
     })
 
     await authStore.initialize()

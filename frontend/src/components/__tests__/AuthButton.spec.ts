@@ -15,6 +15,15 @@ vi.mock('@/services/supabase', () => ({
   },
 }))
 
+vi.mock('@/services/api', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
+
 describe('AuthButton', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -45,6 +54,7 @@ describe('AuthButton', () => {
       email: 'test@example.com',
       app_metadata: { role: 'MEMBER' },
     } as any
+    authStore.userRole = 'MEMBER'
 
     await wrapper.vm.$nextTick()
 
@@ -70,6 +80,7 @@ describe('AuthButton', () => {
       email: 'admin@example.com',
       app_metadata: { role: 'ADMIN' },
     } as any
+    authStore.userRole = 'ADMIN'
 
     await wrapper.vm.$nextTick()
 
