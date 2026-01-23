@@ -9,7 +9,7 @@ import type { Book } from '@/types/Book'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { BookOpen, CheckCircle, Clock, Search, AlertCircle, Loader2, User } from 'lucide-vue-next'
+import { BookOpen, CheckCircle, Clock, Search, AlertCircle, Loader2, User, SortAsc, Filter } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 
 const bookStore = useBookStore()
@@ -118,28 +118,81 @@ async function handleDelete(bookId: number) {
       </Card>
     </div>
 
-    <!-- My Books Filter Button -->
-    <div v-if="authStore.isAuthenticated" class="flex justify-center">
-      <Button
-        :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
-        size="lg"
-        class="gap-2"
-        @click="() => {
-          bookStore.filterUserId = authStore.user?.id || null
-          bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
-        }"
-      >
-        <User class="h-5 w-5" />
-        <span class="font-semibold">
-          {{ bookStore.showMyBooksOnly ? 'Show All Books' : 'Show My Books' }}
-        </span>
-        <Badge
-          :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
-          class="ml-1"
+    <!-- Filters and Sorting -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+      <!-- Left side: My Books Filter -->
+      <div v-if="authStore.isAuthenticated" class="flex gap-2">
+        <Button
+          :variant="bookStore.showMyBooksOnly ? 'default' : 'outline'"
+          class="gap-2"
+          @click="() => {
+            bookStore.filterUserId = authStore.user?.id || null
+            bookStore.showMyBooksOnly = !bookStore.showMyBooksOnly
+          }"
         >
-          {{ bookStore.myBorrowedCount }}
-        </Badge>
-      </Button>
+          <User class="h-4 w-4" />
+          <span>My Books</span>
+          <Badge
+            :variant="bookStore.showMyBooksOnly ? 'secondary' : 'default'"
+            class="ml-1"
+          >
+            {{ bookStore.myBorrowedCount }}
+          </Badge>
+        </Button>
+
+        <Button
+          :variant="bookStore.showAvailableOnly ? 'default' : 'outline'"
+          class="gap-2"
+          @click="() => {
+            bookStore.showAvailableOnly = !bookStore.showAvailableOnly
+            console.log('Available Only toggled:', bookStore.showAvailableOnly)
+            console.log('Filtered books count:', bookStore.filteredBooks.length)
+          }"
+        >
+          <Filter class="h-4 w-4" />
+          <span>Available Only</span>
+        </Button>
+      </div>
+
+      <!-- Right side: Sorting -->
+      <div class="flex items-center gap-2">
+        <SortAsc class="h-4 w-4 text-muted-foreground" />
+        <span class="text-sm text-muted-foreground">Sort by:</span>
+        <div class="flex gap-1">
+          <Button
+            :variant="bookStore.sortBy === 'none' ? 'default' : 'outline'"
+            size="sm"
+            @click="() => {
+              bookStore.sortBy = 'none'
+              console.log('Sort changed to:', bookStore.sortBy)
+            }"
+          >
+            Default
+          </Button>
+          <Button
+            :variant="bookStore.sortBy === 'title' ? 'default' : 'outline'"
+            size="sm"
+            @click="() => {
+              bookStore.sortBy = 'title'
+              console.log('Sort changed to:', bookStore.sortBy)
+              console.log('First 3 books:', bookStore.filteredBooks.slice(0, 3).map(b => b.title))
+            }"
+          >
+            Title
+          </Button>
+          <Button
+            :variant="bookStore.sortBy === 'date' ? 'default' : 'outline'"
+            size="sm"
+            @click="() => {
+              bookStore.sortBy = 'date'
+              console.log('Sort changed to:', bookStore.sortBy)
+              console.log('First 3 books:', bookStore.filteredBooks.slice(0, 3).map(b => ({ title: b.title, date: b.created_at })))
+            }"
+          >
+            Date Added
+          </Button>
+        </div>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -209,6 +262,7 @@ async function handleDelete(bookId: number) {
 
       <div
         v-else
+        :key="`books-${bookStore.showAvailableOnly}-${bookStore.sortBy}-${bookStore.showMyBooksOnly}`"
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
       >
         <BookCard

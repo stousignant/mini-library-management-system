@@ -6,12 +6,16 @@ import apiClient from '@/services/api'
 import { toast } from 'vue-sonner'
 import { STATS_POLLING_INTERVAL_MS } from '@/constants/global'
 
+type SortOption = 'none' | 'title' | 'date'
+
 export const useBookStore = defineStore('book', () => {
   const books = ref<Book[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const searchQuery = ref('')
   const showMyBooksOnly = ref(false)
+  const showAvailableOnly = ref(false)
+  const sortBy = ref<SortOption>('none')
   const filterUserId = ref<string | null>(null)
   let pollingInterval: ReturnType<typeof setInterval> | null = null
 
@@ -24,26 +28,52 @@ export const useBookStore = defineStore('book', () => {
   })
 
   const filteredBooks = computed(() => {
-    const shouldFilterMine = showMyBooksOnly.value
-    const userId = filterUserId.value
-    const currentBooks = books.value
-    const query = searchQuery.value
+    console.log('=== FILTERING COMPUTED RUNNING ===')
+    console.log('showAvailableOnly:', showAvailableOnly.value)
+    console.log('sortBy:', sortBy.value)
+    console.log('showMyBooksOnly:', showMyBooksOnly.value)
 
-    let result = [...currentBooks]
+    let result = [...books.value]
 
-    if (shouldFilterMine && userId) {
-      result = result.filter(book => book.borrowed_by === userId)
+    // Filter by my books
+    if (showMyBooksOnly.value && filterUserId.value) {
+      result = result.filter(book => book.borrowed_by === filterUserId.value)
+      console.log('after mine filter:', result.length)
     }
 
-    const searchTerm = query.toLowerCase().trim()
+    // Filter by available only
+    if (showAvailableOnly.value) {
+      console.log('Filtering by available...')
+      const beforeCount = result.length
+      result = result.filter(book => {
+        const isAvailable = book.status === BookStatus.Available || book.status === 'AVAILABLE'
+        return isAvailable
+      })
+      console.log('available filter: from', beforeCount, 'to', result.length)
+    }
+
+    // Search filter
+    const searchTerm = searchQuery.value.toLowerCase().trim()
     if (searchTerm) {
       result = result.filter(
         book =>
           book.title.toLowerCase().includes(searchTerm) ||
           book.author.toLowerCase().includes(searchTerm)
       )
+      console.log('after search filter:', result.length)
     }
 
+    // Sorting
+    const currentSort = sortBy.value
+    if (currentSort === 'title') {
+      console.log('Sorting by title...')
+      result.sort((a, b) => a.title.localeCompare(b.title))
+    } else if (currentSort === 'date') {
+      console.log('Sorting by date...')
+      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+
+    console.log('=== DONE, returning:', result.length, 'books ===')
     return result
   })
 
@@ -197,6 +227,8 @@ export const useBookStore = defineStore('book', () => {
     error,
     searchQuery,
     showMyBooksOnly,
+    showAvailableOnly,
+    sortBy,
     filterUserId,
     myBorrowedCount,
     filteredBooks,
