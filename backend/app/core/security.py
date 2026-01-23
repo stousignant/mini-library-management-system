@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.constants import (
     ERROR_INSUFFICIENT_PERMISSIONS,
     ERROR_INVALID_TOKEN,
+    JWT_AUDIENCE_AUTHENTICATED,
     SUPABASE_JWKS_PATH,
 )
 from app.core.database import get_db
@@ -122,7 +123,8 @@ def decode_jwt_token(token: str) -> dict:
             token,
             public_key,
             algorithms=["ES256"],
-            options={"verify_aud": False},
+            audience=JWT_AUDIENCE_AUTHENTICATED,
+            options={"verify_aud": True},
         )
         logger.info(f"JWT verified (ES256) for user: {payload.get('email')}")
         return payload
@@ -134,7 +136,8 @@ def decode_jwt_token(token: str) -> dict:
                 token,
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
-                options={"verify_aud": False},
+                audience=JWT_AUDIENCE_AUTHENTICATED,
+                options={"verify_aud": True},
             )
             logger.info(f"JWT verified (HS256) for user: {payload.get('email')}")
             return payload
