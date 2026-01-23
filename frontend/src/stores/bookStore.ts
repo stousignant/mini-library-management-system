@@ -138,7 +138,7 @@ export const useBookStore = defineStore('book', () => {
 
       // Show user-friendly error message
       const errorMessage =
-        err?.response?.data?.detail || 'Failed to update book status'
+        (err as any)?.response?.data?.detail || 'Failed to update book status'
       toast.error(errorMessage)
     }
   }

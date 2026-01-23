@@ -34,10 +34,10 @@ onMounted(async () => {
         </h1>
         <div class="flex items-center gap-3">
           <button
+            class="relative inline-flex items-center h-9 rounded-full border border-input bg-background p-1 hover:bg-accent transition-colors"
             :aria-label="
               isDark ? 'Switch to light mode' : 'Switch to dark mode'
             "
-            class="relative inline-flex items-center h-9 rounded-full border border-input bg-background p-1 hover:bg-accent transition-colors"
             @click="toggleTheme"
           >
             <div class="flex items-center gap-1 px-1">
@@ -71,7 +71,7 @@ onMounted(async () => {
       <div class="mb-6">
         <h2 class="text-2xl font-semibold text-foreground">Book Collection</h2>
         <p class="text-muted-foreground mt-1">
-          Browse and manage your library books
+          Browse and manage your library books.
         </p>
       </div>
       <BookList />
