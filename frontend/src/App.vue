@@ -19,7 +19,7 @@ onMounted(async () => {
   <div class="min-h-screen bg-background">
     <Toaster
       position="bottom-right"
-      :duration="3000"
+      :duration="4500"
       :close-button="true"
       :rich-colors="true"
       :expand="false"
