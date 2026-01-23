@@ -2,20 +2,27 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '@/services/supabase'
 import type { User, Session } from '@supabase/supabase-js'
+import apiClient from '@/services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const session = ref<Session | null>(null)
   const loading = ref(false)
+  const userRole = ref<string | null>(null)
 
   const isAuthenticated = computed(() => !!session.value)
 
-  const userRole = computed(() => {
-    if (!session.value?.user) return null
-    return session.value.user.app_metadata?.role || null
-  })
-
   const isAdmin = computed(() => userRole.value === 'ADMIN')
+
+  async function fetchUserProfile() {
+    try {
+      const response = await apiClient.get('/profile')
+      userRole.value = response.data.role
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      userRole.value = null
+    }
+  }
 
   async function initialize() {
     loading.value = true
@@ -30,11 +37,18 @@ export const useAuthStore = defineStore('auth', () => {
       if (currentSession) {
         session.value = currentSession
         user.value = currentSession.user
+        await fetchUserProfile()
       }
 
-      supabase.auth.onAuthStateChange((_event, newSession) => {
+      supabase.auth.onAuthStateChange(async (_event, newSession) => {
         session.value = newSession
         user.value = newSession?.user ?? null
+
+        if (newSession) {
+          await fetchUserProfile()
+        } else {
+          userRole.value = null
+        }
       })
     } catch (error) {
       console.error('Error initializing auth:', error)
@@ -74,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       session.value = null
       user.value = null
+      userRole.value = null
     } catch (error) {
       console.error('Error signing out:', error)
       throw error
