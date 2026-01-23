@@ -6,224 +6,224 @@ import apiClient from '@/services/api'
 import type { User, Session } from '@supabase/supabase-js'
 
 vi.mock('@/services/supabase', () => ({
-    supabase: {
-        auth: {
-            getSession: vi.fn(),
-            signInWithOAuth: vi.fn(),
-            signOut: vi.fn(),
-            onAuthStateChange: vi.fn(),
-        },
+  supabase: {
+    auth: {
+      getSession: vi.fn(),
+      signInWithOAuth: vi.fn(),
+      signOut: vi.fn(),
+      onAuthStateChange: vi.fn(),
     },
+  },
 }))
 
 vi.mock('@/services/api', () => ({
-    default: {
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn(),
-        delete: vi.fn(),
-    },
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
 }))
 
 describe('authStore', () => {
-    beforeEach(() => {
-        setActivePinia(createPinia())
-        vi.clearAllMocks()
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('initializes with null user and session', () => {
+    const authStore = useAuthStore()
+
+    expect(authStore.user).toBeNull()
+    expect(authStore.session).toBeNull()
+    expect(authStore.loading).toBe(false)
+  })
+
+  it('isAuthenticated returns false when no session', () => {
+    const authStore = useAuthStore()
+
+    expect(authStore.isAuthenticated).toBe(false)
+  })
+
+  it('isAuthenticated returns true when session exists', () => {
+    const authStore = useAuthStore()
+    authStore.session = {
+      access_token: 'test-token',
+      user: { id: '123', email: 'test@example.com' } as unknown as User,
+    } as Session
+
+    expect(authStore.isAuthenticated).toBe(true)
+  })
+
+  it('userRole extracts role from session user metadata', async () => {
+    const authStore = useAuthStore()
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-token',
+          user: {
+            id: '123',
+            email: 'admin@example.com',
+            app_metadata: { role: 'ADMIN' },
+          } as unknown as User,
+        } as Session,
+      },
+      error: null,
     })
 
-    it('initializes with null user and session', () => {
-        const authStore = useAuthStore()
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as { data: { subscription: { unsubscribe: () => void } } })
 
-        expect(authStore.user).toBeNull()
-        expect(authStore.session).toBeNull()
-        expect(authStore.loading).toBe(false)
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'ADMIN' },
     })
 
-    it('isAuthenticated returns false when no session', () => {
-        const authStore = useAuthStore()
+    await authStore.initialize()
 
-        expect(authStore.isAuthenticated).toBe(false)
+    expect(authStore.userRole).toBe('ADMIN')
+  })
+
+  it('isAdmin returns true for ADMIN role', async () => {
+    const authStore = useAuthStore()
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-token',
+          user: {
+            id: '123',
+            email: 'admin@example.com',
+            app_metadata: { role: 'ADMIN' },
+          } as unknown as User,
+        } as Session,
+      },
+      error: null,
     })
 
-    it('isAuthenticated returns true when session exists', () => {
-        const authStore = useAuthStore()
-        authStore.session = {
-            access_token: 'test-token',
-            user: { id: '123', email: 'test@example.com' } as unknown as User,
-        } as Session
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as { data: { subscription: { unsubscribe: () => void } } })
 
-        expect(authStore.isAuthenticated).toBe(true)
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'ADMIN' },
     })
 
-    it('userRole extracts role from session user metadata', async () => {
-        const authStore = useAuthStore()
+    await authStore.initialize()
 
-        vi.mocked(supabase.auth.getSession).mockResolvedValue({
-            data: {
-                session: {
-                    access_token: 'test-token',
-                    user: {
-                        id: '123',
-                        email: 'admin@example.com',
-                        app_metadata: { role: 'ADMIN' },
-                    } as unknown as User,
-                } as Session,
-            },
-            error: null,
-        })
+    expect(authStore.isAdmin).toBe(true)
+  })
 
-        vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-        } as any)
+  it('isAdmin returns false for MEMBER role', async () => {
+    const authStore = useAuthStore()
 
-        vi.mocked(apiClient.get).mockResolvedValue({
-            data: { role: 'ADMIN' },
-        })
-
-        await authStore.initialize()
-
-        expect(authStore.userRole).toBe('ADMIN')
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-token',
+          user: {
+            id: '123',
+            email: 'member@example.com',
+            app_metadata: { role: 'MEMBER' },
+          } as unknown as User,
+        } as Session,
+      },
+      error: null,
     })
 
-    it('isAdmin returns true for ADMIN role', async () => {
-        const authStore = useAuthStore()
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as { data: { subscription: { unsubscribe: () => void } } })
 
-        vi.mocked(supabase.auth.getSession).mockResolvedValue({
-            data: {
-                session: {
-                    access_token: 'test-token',
-                    user: {
-                        id: '123',
-                        email: 'admin@example.com',
-                        app_metadata: { role: 'ADMIN' },
-                    } as unknown as User,
-                } as Session,
-            },
-            error: null,
-        })
-
-        vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-        } as any)
-
-        vi.mocked(apiClient.get).mockResolvedValue({
-            data: { role: 'ADMIN' },
-        })
-
-        await authStore.initialize()
-
-        expect(authStore.isAdmin).toBe(true)
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'MEMBER' },
     })
 
-    it('isAdmin returns false for MEMBER role', async () => {
-        const authStore = useAuthStore()
+    await authStore.initialize()
 
-        vi.mocked(supabase.auth.getSession).mockResolvedValue({
-            data: {
-                session: {
-                    access_token: 'test-token',
-                    user: {
-                        id: '123',
-                        email: 'member@example.com',
-                        app_metadata: { role: 'MEMBER' },
-                    } as unknown as User,
-                } as Session,
-            },
-            error: null,
-        })
+    expect(authStore.isAdmin).toBe(false)
+  })
 
-        vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-        } as any)
+  it('signInWithGithub calls Supabase OAuth', async () => {
+    const authStore = useAuthStore()
 
-        vi.mocked(apiClient.get).mockResolvedValue({
-            data: { role: 'MEMBER' },
-        })
-
-        await authStore.initialize()
-
-        expect(authStore.isAdmin).toBe(false)
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
+      data: { provider: 'github', url: 'https://github.com/login' },
+      error: null,
     })
 
-    it('signInWithGithub calls Supabase OAuth', async () => {
-        const authStore = useAuthStore()
+    await authStore.signInWithGithub()
 
-        vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
-            data: { provider: 'github', url: 'https://github.com/login' },
-            error: null,
-        })
+    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'github',
+    })
+  })
 
-        await authStore.signInWithGithub()
+  it('signInWithGoogle calls Supabase OAuth', async () => {
+    const authStore = useAuthStore()
 
-        expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
-            provider: 'github',
-        })
+    vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
+      data: { provider: 'google', url: 'https://accounts.google.com/signin' },
+      error: null,
     })
 
-    it('signInWithGoogle calls Supabase OAuth', async () => {
-        const authStore = useAuthStore()
+    await authStore.signInWithGoogle()
 
-        vi.mocked(supabase.auth.signInWithOAuth).mockResolvedValue({
-            data: { provider: 'google', url: 'https://accounts.google.com/signin' },
-            error: null,
-        })
+    expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+    })
+  })
 
-        await authStore.signInWithGoogle()
+  it('signOut clears session and user', async () => {
+    const authStore = useAuthStore()
 
-        expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
-            provider: 'google',
-        })
+    authStore.session = {
+      access_token: 'test-token',
+      user: { id: '123', email: 'test@example.com' } as unknown as User,
+    } as Session
+    authStore.user = { id: '123', email: 'test@example.com' } as unknown as User
+
+    vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      error: null,
     })
 
-    it('signOut clears session and user', async () => {
-        const authStore = useAuthStore()
+    await authStore.signOut()
 
-        authStore.session = {
-            access_token: 'test-token',
-            user: { id: '123', email: 'test@example.com' } as unknown as User,
-        } as Session
-        authStore.user = { id: '123', email: 'test@example.com' } as unknown as User
+    expect(supabase.auth.signOut).toHaveBeenCalled()
+    expect(authStore.session).toBeNull()
+    expect(authStore.user).toBeNull()
+  })
 
-        vi.mocked(supabase.auth.signOut).mockResolvedValue({
-            error: null,
-        })
+  it('initialize loads existing session', async () => {
+    const authStore = useAuthStore()
 
-        await authStore.signOut()
-
-        expect(supabase.auth.signOut).toHaveBeenCalled()
-        expect(authStore.session).toBeNull()
-        expect(authStore.user).toBeNull()
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-token',
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            app_metadata: { role: 'MEMBER' },
+          } as unknown as User,
+        } as Session,
+      },
+      error: null,
     })
 
-    it('initialize loads existing session', async () => {
-        const authStore = useAuthStore()
+    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    } as { data: { subscription: { unsubscribe: () => void } } })
 
-        vi.mocked(supabase.auth.getSession).mockResolvedValue({
-            data: {
-                session: {
-                    access_token: 'test-token',
-                    user: {
-                        id: '123',
-                        email: 'test@example.com',
-                        app_metadata: { role: 'MEMBER' },
-                    } as unknown as User,
-                } as Session,
-            },
-            error: null,
-        })
-
-        vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-        } as any)
-
-        vi.mocked(apiClient.get).mockResolvedValue({
-            data: { role: 'MEMBER' },
-        })
-
-        await authStore.initialize()
-
-        expect(authStore.session).not.toBeNull()
-        expect(authStore.user).not.toBeNull()
-        expect(authStore.user?.email).toBe('test@example.com')
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { role: 'MEMBER' },
     })
+
+    await authStore.initialize()
+
+    expect(authStore.session).not.toBeNull()
+    expect(authStore.user).not.toBeNull()
+    expect(authStore.user?.email).toBe('test@example.com')
+  })
 })

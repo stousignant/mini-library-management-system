@@ -7,6 +7,22 @@ import prettier from 'eslint-plugin-prettier'
 import prettierConfig from 'eslint-config-prettier'
 
 export default [
+  {
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '*.config.js',
+      '*.config.ts',
+      'package.json',
+      'package-lock.json',
+      '.prettierrc.json',
+      '.prettierignore',
+      '.dockerignore',
+      'Dockerfile',
+      '.env*',
+      'index.html',
+    ],
+  },
   js.configs.recommended,
   prettierConfig,
   {
@@ -44,8 +60,5 @@ export default [
       ],
       'prettier/prettier': 'error',
     },
-  },
-  {
-    ignores: ['dist/', 'node_modules/', '*.config.js', '*.config.ts'],
   },
 ]
