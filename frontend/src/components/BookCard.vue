@@ -26,7 +26,7 @@ const bookStore = useBookStore()
 const authStore = useAuthStore()
 
 const getStatusVariant = (status: BookStatus) => {
-  return status === BookStatus.Available ? 'default' : 'secondary'
+  return status === BookStatus.Available ? 'success' : 'warning'
 }
 
 const getButtonVariant = (status: BookStatus) => {

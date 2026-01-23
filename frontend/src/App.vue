@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/composables/useTheme'
 import AuthButton from './components/AuthButton.vue'
 import BookList from './components/BookList.vue'
-import { Button } from '@/components/ui/button'
 import { Moon, Sun } from 'lucide-vue-next'
 import { Toaster } from 'vue-sonner'
 
@@ -27,15 +26,30 @@ onMounted(async () => {
           Library Management System
         </h1>
         <div class="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             @click="toggleTheme"
             :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            class="relative inline-flex items-center h-9 rounded-full border border-input bg-background p-1 hover:bg-accent transition-colors"
           >
-            <Sun v-if="isDark" class="h-5 w-5" />
-            <Moon v-else class="h-5 w-5" />
-          </Button>
+            <div class="flex items-center gap-1 px-1">
+              <div
+                :class="[
+                  'flex items-center justify-center w-7 h-7 rounded-full transition-all',
+                  !isDark ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                ]"
+              >
+                <Sun class="h-4 w-4" />
+              </div>
+              <div
+                :class="[
+                  'flex items-center justify-center w-7 h-7 rounded-full transition-all',
+                  isDark ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                ]"
+              >
+                <Moon class="h-4 w-4" />
+              </div>
+            </div>
+          </button>
           <AuthButton />
         </div>
       </div>
